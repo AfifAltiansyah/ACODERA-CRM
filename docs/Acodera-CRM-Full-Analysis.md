@@ -39,7 +39,7 @@
 | Frontend | React 18, Vite 5, React Router 7, Tailwind 3, Framer Motion, Recharts |
 | Local API | Node.js Express 4 (ESM), Zod, bcrypt, JWT, helmet, rate limiting |
 | Production API | Supabase Edge Functions (Deno) — mirrors Express under `supabase/functions/api/` |
-| Database | PostgreSQL on Supabase (legacy MySQL docs still in `DATABASE_SETUP.md`) |
+| Database | PostgreSQL on Supabase (legacy MySQL docs still in `docs/DATABASE_SETUP.md`) |
 | Auth | Custom JWT (24h) + bcrypt; Supabase Auth only as OAuth bridge |
 | Email | Brevo via Edge Functions (`process-automations`, `trigger-automation`, etc.) |
 | Payments | Midtrans webhooks + gateway adapters |
@@ -119,7 +119,7 @@ flowchart TB
 - **Two backends** (Express + Edge) must stay in sync
 - **Two data paths:** REST API vs direct Supabase in `mockData.js` (~1,200 lines)
 - `server/index.js` comment claims tenant validation on data routes, but `validateTenantAccess` is **never mounted**
-- `DATABASE_SETUP.md` still documents MySQL; stack is Supabase Postgres
+- `docs/DATABASE_SETUP.md` still documents MySQL; stack is Supabase Postgres
 - Hardcoded Supabase URL/keys in source
 - Duplicate `AuthProvider` in `main.jsx` and `App.jsx`
 - JavaScript only (no TypeScript)

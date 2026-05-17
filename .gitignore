@@ -29,9 +29,13 @@ dist-ssr
 *.sw?
 
 # Netlify cache
-netlify/_cacache/
-netlify/_npx/
-netlify/_update-notifier-last-checked
+netlify/
 
 # Supabase temp
 supabase/.temp/
+
+# Test artifacts
+testsprite_tests/
+
+# Root .DS_Store
+.DS_Store

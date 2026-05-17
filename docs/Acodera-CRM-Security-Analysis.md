@@ -35,7 +35,7 @@
 - Two backends (Express + Supabase Edge) that must stay in sync
 - Two data paths: REST API vs direct Supabase client in mockData.js (~1,200 lines)
 - server/index.js comment claims tenant validation on data routes, but validateTenantAccess is never mounted
-- DATABASE_SETUP.md still documents MySQL; actual stack is Supabase Postgres
+- `docs/DATABASE_SETUP.md` still documents MySQL; actual stack is Supabase Postgres
 - Hardcoded Supabase URL/keys in source
 - Duplicate AuthProvider in main.jsx and App.jsx
 - JavaScript only (no TypeScript) — higher runtime risk
@@ -88,7 +88,7 @@ Endpoints accept `{ email, name }` with no Google/Supabase session proof.
 
 Filters by branch_id in JavaScript. Supabase client uses anon key and does not attach app JWT to auth.jwt().
 
-RLS policies in supabase-migration-rls-secure.sql use auth.jwt() claims that do not apply to custom JWT in localStorage.
+RLS policies in `supabase/migrations/supabase-migration-rls-secure.sql` use auth.jwt() claims that do not apply to custom JWT in localStorage.
 
 **Impact:** If RLS is missing, permissive, or includes "OR branch IS NULL", users can query Supabase REST API directly across tenants.
 
