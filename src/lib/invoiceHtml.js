@@ -77,9 +77,9 @@ export function generateInvoiceReminderHtml(invoice, templateOverrides) {
     <div style="display:flex;align-items:center;gap:12px;">
       ${logoSrc
         ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:100px;max-height:48px;object-fit:contain;" />`
-        : `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</span></div>`
+        : (logoInitial ? `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</span></div>` : '')
       }
-      <span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>
+      ${companyName ? `<span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>` : ''}
     </div>
     <span style="color:rgba(255,255,255,0.85);font-size:14px;">Payment Reminder</span>
   </div>
@@ -159,8 +159,8 @@ export function generateInvoiceReminderHtml(invoice, templateOverrides) {
 
 export function generateInvoiceHtml(invoice, templateOverrides) {
   const tpl = { ...DEFAULT_TEMPLATE, ...(templateOverrides || {}) }
-  if (!tpl.companyName) tpl.companyName = DEFAULT_TEMPLATE.companyName
-  if (!tpl.logoInitial) tpl.logoInitial = DEFAULT_TEMPLATE.logoInitial
+  if (tpl.companyName === null || tpl.companyName === undefined) tpl.companyName = DEFAULT_TEMPLATE.companyName
+  if (tpl.logoInitial === null || tpl.logoInitial === undefined) tpl.logoInitial = DEFAULT_TEMPLATE.logoInitial
 
   const accent = tpl.accentColor || '#1e40af'
   const logoSrc = tpl.logoUrl
@@ -190,9 +190,9 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     <div style="display:flex;align-items:center;gap:12px;">
       ${logoSrc
         ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:100px;max-height:48px;object-fit:contain;" />`
-        : `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:16px;">${tpl.logoInitial}</span></div>`
+        : (tpl.logoInitial ? `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:16px;">${tpl.logoInitial}</span></div>` : '')
       }
-      <span style="color:#fff;font-size:18px;font-weight:700;">${tpl.companyName}</span>
+      ${tpl.companyName ? `<span style="color:#fff;font-size:18px;font-weight:700;">${tpl.companyName}</span>` : ''}
     </div>
     <span style="color:rgba(255,255,255,0.85);font-size:14px;">Invoice</span>
   </div>

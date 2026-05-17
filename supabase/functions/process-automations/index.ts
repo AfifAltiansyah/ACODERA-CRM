@@ -48,10 +48,10 @@ function getPaymentDetail(method: string, detail: string, companyName: string) {
 
 function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string) {
   const tpl = template || {}
-  const companyName = tpl.companyName || 'Acodera CRM'
+  const companyName = tpl.companyName ?? 'Acodera CRM'
   const accent = tpl.accentColor || '#1e40af'
   const logoSrc = tpl.logoUrl || ''
-  const logoInitial = tpl.logoInitial || companyName.charAt(0)
+  const logoInitial = tpl.logoInitial ?? companyName.charAt(0)
   const address = tpl.address || ''
   const email = tpl.email || SENDER_EMAIL
   const phone = tpl.phone || ''
@@ -88,9 +88,9 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
     <div style="display:flex;align-items:center;gap:12px;">
       ${logoSrc
         ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:100px;max-height:48px;object-fit:contain;" />`
-        : `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</div>`
+        : (logoInitial ? `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</div>` : '')
       }
-      <span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>
+      ${companyName ? `<span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>` : ''}
     </div>
     <span style="color:rgba(255,255,255,0.85);font-size:14px;">Payment Reminder</span>
   </div>
@@ -155,7 +155,7 @@ async function generateInvoicePdf(inv: any, template: any) {
       website: '', footerText: 'Thank you for your business!', taxRate: 0, currencySymbol: 'Rp',
     }
     const tpl = { ...DEFAULT_TEMPLATE, ...(template || {}) }
-    if (!tpl.companyName) tpl.companyName = DEFAULT_TEMPLATE.companyName
+    if (tpl.companyName === null || tpl.companyName === undefined) tpl.companyName = DEFAULT_TEMPLATE.companyName
     const cur = tpl.currencySymbol || 'Rp'
     const taxRate = tpl.taxRate || 0
     const taxAmount = (inv.total_amount || 0) * (taxRate / 100)
@@ -242,6 +242,14 @@ async function generateInvoicePdf(inv: any, template: any) {
       drawText(`Info: ${paymentDetail.detail}`, payX, yPos - 14, font, 11, rgb(0.2, 0.2, 0.28))
     }
     yPos -= 40
+
+    if (inv.item_name || inv.ticket_title) {
+      const ticketName = inv.item_name || inv.ticket_title
+      drawRect(margin, yPos - 24, width - margin * 2, 28, rgb(0.941, 0.969, 1))
+      page.drawRectangle({ x: margin, y: yPos - 24, width: width - margin * 2, height: 28, borderColor: rgb(0.702, 0.851, 1), borderWidth: 1 })
+      drawText(`Ticket: ${ticketName}`, margin + 12, yPos - 6, font, 10, rgb(0, 0.4, 0.8))
+      yPos -= 36
+    }
 
     const itemCode = inv.unique_code || '-'
     const qty = inv.quantity || 1

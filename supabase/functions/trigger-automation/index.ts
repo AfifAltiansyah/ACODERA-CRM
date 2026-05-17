@@ -39,10 +39,10 @@ function getPaymentDetail(method: string, detail: string, companyName: string) {
 
 function generateInvoiceHtml(txn: any, template: any, statusLabel: string) {
   const tpl = template || {}
-  const companyName = tpl.companyName || 'Acodera CRM'
+  const companyName = tpl.companyName ?? 'Acodera CRM'
   const accent = tpl.accentColor || '#1e40af'
   const logoSrc = tpl.logoUrl || ''
-  const logoInitial = tpl.logoInitial || companyName.charAt(0)
+  const logoInitial = tpl.logoInitial ?? companyName.charAt(0)
   const address = tpl.address || ''
   const email = tpl.email || SENDER_EMAIL
   const phone = tpl.phone || ''
@@ -84,9 +84,9 @@ function generateInvoiceHtml(txn: any, template: any, statusLabel: string) {
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
         ${logoSrc
           ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:120px;max-height:60px;object-fit:contain;" />`
-          : `<div style="width:40px;height:40px;border-radius:8px;background:${accent};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:18px;">${logoInitial}</div>`
+          : (logoInitial ? `<div style="width:40px;height:40px;border-radius:8px;background:${accent};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:18px;">${logoInitial}</div>` : '')
         }
-        <h1 style="margin:0;font-size:22px;font-weight:700;color:${accent};">${companyName}</h1>
+        ${companyName ? `<h1 style="margin:0;font-size:22px;font-weight:700;color:${accent};">${companyName}</h1>` : ''}
       </div>
       ${address ? `<p style="margin:4px 0 0;font-size:13px;color:#64748b;">${address}</p>` : ''}
       <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${email}${phone ? ' | ' + phone : ''}</p>
@@ -155,10 +155,10 @@ function generateInvoiceHtml(txn: any, template: any, statusLabel: string) {
 
 function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string) {
   const tpl = template || {}
-  const companyName = tpl.companyName || 'Acodera CRM'
+  const companyName = tpl.companyName ?? 'Acodera CRM'
   const accent = tpl.accentColor || '#1e40af'
   const logoSrc = tpl.logoUrl || ''
-  const logoInitial = tpl.logoInitial || companyName.charAt(0)
+  const logoInitial = tpl.logoInitial ?? companyName.charAt(0)
   const address = tpl.address || ''
   const email = tpl.email || SENDER_EMAIL
   const phone = tpl.phone || ''
@@ -196,9 +196,9 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
     <div style="display:flex;align-items:center;gap:12px;">
       ${logoSrc
         ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:100px;max-height:48px;object-fit:contain;" />`
-        : `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</div>`
+        : (logoInitial ? `<div style="width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;">${logoInitial}</div>` : '')
       }
-      <span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>
+      ${companyName ? `<span style="color:#fff;font-size:18px;font-weight:700;">${companyName}</span>` : ''}
     </div>
     <span style="color:rgba(255,255,255,0.85);font-size:14px;">Payment Reminder</span>
   </div>

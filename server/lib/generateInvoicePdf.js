@@ -77,8 +77,8 @@ export async function generateInvoicePdfBase64(invoice, templateOverrides) {
   }
 
   const tpl = { ...DEFAULT_TEMPLATE, ...(templateOverrides || {}) }
-  if (!tpl.companyName) tpl.companyName = DEFAULT_TEMPLATE.companyName
-  if (!tpl.logoInitial) tpl.logoInitial = DEFAULT_TEMPLATE.logoInitial
+  if (tpl.companyName === null || tpl.companyName === undefined) tpl.companyName = DEFAULT_TEMPLATE.companyName
+  if (tpl.logoInitial === null || tpl.logoInitial === undefined) tpl.logoInitial = DEFAULT_TEMPLATE.logoInitial
 
   const accent = hexToRgb(tpl.accentColor || '#1e40af')
   const cur = tpl.currencySymbol || '$'
