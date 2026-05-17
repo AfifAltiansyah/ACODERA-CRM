@@ -1228,8 +1228,8 @@ async function insertNotification({ type, title, message, entityId, link }) {
       entity_id: entityId || '',
       link: link || '',
     }])
-  } catch (err) {
-    console.error('insertNotification error:', err)
+  } catch {
+    // Silently ignore — notifications are non-critical
   }
 }
 
