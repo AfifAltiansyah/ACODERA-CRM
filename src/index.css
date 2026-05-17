@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --accent: #0066cc;
+    --accent-hover: #0052a3;
+    --canvas: #ffffff;
+    --parchment: #f5f5f7;
+    --ink: #1d1d1f;
+    --muted: #86868b;
+    --hairline: rgba(0, 0, 0, 0.08);
+  }
+
+  .dark {
+    --ink: #f5f5f7;
+    --canvas: #1d1d1f;
+    --parchment: #2d2d2f;
+    --muted: #86868b;
+    --hairline: rgba(255, 255, 255, 0.12);
+  }
+
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply font-sans;
+    background: var(--canvas);
+    color: var(--ink);
+  }
+}
+
+@layer utilities {
+  .apple-input {
+    @apply w-full rounded-full border-0 bg-[var(--parchment)] px-5 py-3.5
+      text-[15px] text-[var(--ink)] placeholder:text-[var(--muted)]
+      transition-all duration-200 ease-out
+      focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 focus:ring-offset-[var(--canvas)];
+  }
+
+  .apple-btn {
+    @apply w-full rounded-full bg-[var(--accent)] px-6 py-3.5
+      text-[15px] font-semibold text-white
+      transition-all duration-200 ease-out
+      hover:bg-[var(--accent-hover)]
+      active:scale-[0.97]
+      disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100;
+  }
+
+  .apple-ghost {
+    @apply w-full rounded-full border border-[var(--hairline)] bg-[var(--canvas)]
+      px-6 py-3 text-[14px] font-medium text-[var(--ink)]
+      transition-all duration-200 ease-out
+      hover:bg-[var(--parchment)]
+      active:scale-[0.97];
+  }
+
+  .apple-card {
+    @apply rounded-[14px] border border-[var(--hairline)] bg-[var(--canvas)] p-5;
+  }
+
+  .apple-pill {
+    @apply rounded-full bg-[var(--parchment)] px-3.5 py-1.5 text-[12px] font-medium text-[var(--ink)];
+  }
+
+  .apple-tag {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium;
+  }
+
+  .apple-hairline {
+    @apply border-b border-[var(--hairline)];
+  }
+}

@@ -1,0 +1,4 @@
+-- Run this in Supabase SQL Editor
+ALTER TABLE users ADD COLUMN IF NOT EXISTS payment_gateway TEXT DEFAULT NULL;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gateway_config JSONB DEFAULT '{}';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS gateway_webhook_token TEXT DEFAULT NULL;

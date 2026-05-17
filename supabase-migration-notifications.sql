@@ -1,0 +1,12 @@
+-- Run this in Supabase SQL Editor
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  branch TEXT DEFAULT NULL,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  message TEXT DEFAULT '',
+  entity_id TEXT DEFAULT '',
+  link TEXT DEFAULT '',
+  read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
