@@ -2,8 +2,8 @@
 // Called every minute by pg_cron (Supabase PostgreSQL cron) to send scheduled emails
 // Auth: requires Authorization header with Supabase anon key or service role key
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'

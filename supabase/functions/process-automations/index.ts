@@ -5,8 +5,8 @@
 // For one-time automations, marks status as 'completed'.
 // Note: "immediate" type automations are NOT handled here — those are triggered via trigger-automation
 
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
@@ -374,6 +374,8 @@ serve(async (req) => {
           // For Invoice Reminder, fetch transaction data and generate invoice preview
           let subject = auto.subject || `Notification from ${auto.from_name || 'Acodera CRM'}`
           let htmlBody = auto.body || `<p>${subject}</p>`
+          let pdfBase64: string | null = null
+          let inv: any = null
 
           if (auto.type === 'Invoice Reminder') {
             const { data: invoices } = await supabase
@@ -384,7 +386,7 @@ serve(async (req) => {
               .limit(1)
 
             if (invoices && invoices.length > 0) {
-              const inv = invoices[0]
+              inv = invoices[0]
 
               // Fetch invoice template
               let invoiceTemplate: any = null
@@ -447,7 +449,7 @@ serve(async (req) => {
               }
 
               // Generate PDF attachment
-              const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate)
+              pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate)
             }
           }
 
