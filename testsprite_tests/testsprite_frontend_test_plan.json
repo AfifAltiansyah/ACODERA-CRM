@@ -1,0 +1,2132 @@
+[
+  {
+    "id": "TC001",
+    "title": "Block access to the dashboard before login",
+    "description": "Verifies that an unauthenticated user is protected from direct access to the dashboard and is sent to sign in.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page is shown"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard content is not displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Log in and reach the dashboard summary",
+    "description": "Verifies that an authenticated user can log in and land on the dashboard with the main summary content available.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard summary widgets are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Create a contact and see it in the list",
+    "description": "Verifies that a user can add a new contact and return to the list to confirm it was created.",
+    "category": "Contact Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/contacts"
+      },
+      {
+        "type": "action",
+        "description": "Start adding a new contact"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact name field with a unique full name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact email field with a unique email address"
+      },
+      {
+        "type": "action",
+        "description": "Submit the contact form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new contact appears in the contact list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact list is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Switch to registration and create an account",
+    "description": "Verifies that a user can switch to registration, submit valid details, and reach the dashboard after sign-up.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the registration form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the name field with a valid full name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with a valid email address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user lands on the dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard summary content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Create a new admin user",
+    "description": "This verifies that an owner can create a user with role and branch details and then see the new user in the management list.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/users"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new user"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the new user details"
+      },
+      {
+        "type": "action",
+        "description": "Select an appropriate role"
+      },
+      {
+        "type": "action",
+        "description": "Submit the user form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new user appears in the user list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Delete a contact from the list",
+    "description": "Verifies that a user can remove a contact and no longer see it in the contacts list afterward.",
+    "category": "Contact Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/contacts"
+      },
+      {
+        "type": "action",
+        "description": "Select a contact for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact is removed from the contact list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact list is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "View the pipeline board and deal stages",
+    "description": "This verifies that an authenticated user can open the pipeline board and see deal cards organized across stages.",
+    "category": "Pipeline Management (Flows)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/flow"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the Kanban board is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify deal cards are shown across stages"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "See dashboard activity summary after login",
+    "description": "Verifies that an authenticated user can open the dashboard and see the core summary metrics and charts needed to monitor activity.",
+    "category": "Dashboard Home",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify total contacts, flows, invoices, and reviews are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the revenue chart and flow distribution are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Create a new deal on the pipeline board",
+    "description": "This verifies that a user can create a deal and see it appear on the pipeline board.",
+    "category": "Pipeline Management (Flows)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/flow/new"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the deal name field with Test Deal Alpha"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the contact field with a new contact name created in this form"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the deal value field with a valid amount"
+      },
+      {
+        "type": "action",
+        "description": "Submit the deal form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new deal appears on the pipeline board"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal is shown in an initial stage"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Update an existing contact",
+    "description": "Verifies that a user can edit a contact and see the updated record reflected in the contacts list.",
+    "category": "Contact Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/contacts"
+      },
+      {
+        "type": "action",
+        "description": "Open a contact for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the contact details with a unique change"
+      },
+      {
+        "type": "action",
+        "description": "Save the contact changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated contact appears in the contact list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact list remains visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Move a deal to another pipeline stage",
+    "description": "This verifies that a user can update a deal’s stage and see it reflected on the board.",
+    "category": "Pipeline Management (Flows)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/flow"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing deal card"
+      },
+      {
+        "type": "action",
+        "description": "Move the deal to a different stage"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal card is shown in the new stage"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal is no longer shown in the previous stage"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Create a new API key",
+    "description": "This verifies that an authorized user can generate an API key with a name and rate limit and then view the newly created key once.",
+    "category": "API Key Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/api-keys"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new API key"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a key name"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid rate limit"
+      },
+      {
+        "type": "action",
+        "description": "Submit the API key form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the newly generated key is shown once"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new key appears in the API keys list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Create an invoice with customer items and payment method",
+    "description": "This verifies that a user can create a new invoice and see it appear in the invoice list.",
+    "category": "Invoicing & Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing/new"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the customer name field with Test Customer Alpha"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the invoice item details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Select a payment method"
+      },
+      {
+        "type": "action",
+        "description": "Submit the invoice form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new invoice appears in the invoice list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice is available for further actions"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Create an automation with trigger and schedule",
+    "description": "This verifies that a user can create an automation campaign and see it in the automation list.",
+    "category": "Automation Engine",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/automation/new"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the automation name field with Test Automation Alpha"
+      },
+      {
+        "type": "action",
+        "description": "Select a trigger event"
+      },
+      {
+        "type": "action",
+        "description": "Select a schedule"
+      },
+      {
+        "type": "action",
+        "description": "Submit the automation form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new automation appears in the automation list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the automation is shown with its configured status"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Edit an existing admin user",
+    "description": "This verifies that an owner can update a user record and see the changes reflected in the management list.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/users"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing user for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the user details"
+      },
+      {
+        "type": "action",
+        "description": "Save the user changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated user record is shown in the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Edit a deal and keep the changes on the board",
+    "description": "This verifies that a user can update deal details and see the updated card information on the pipeline board.",
+    "category": "Pipeline Management (Flows)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/flow"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing deal for editing"
+      },
+      {
+        "type": "action",
+        "description": "Update the deal name with a unique edited name"
+      },
+      {
+        "type": "action",
+        "description": "Save the deal changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated deal card is visible on the board"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the edited deal details are reflected"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Show an error for invalid login credentials",
+    "description": "Verifies that submitting incorrect credentials keeps the user on the login screen and shows a visible login error.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with an invalid email address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with an invalid password"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the login page remains visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a login error message is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Preview and download an invoice document",
+    "description": "This verifies that a user can open an invoice, preview it, and download it as a document.",
+    "category": "Invoicing & Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing invoice detail view"
+      },
+      {
+        "type": "action",
+        "description": "Preview the invoice"
+      },
+      {
+        "type": "action",
+        "description": "Download the invoice as a PDF or PNG"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice preview is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful document download is initiated"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Configure and enable a payment gateway",
+    "description": "Verifies that an administrator can choose a gateway provider, enter configuration details, and save an enabled gateway.",
+    "category": "Payment Gateway Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/gateway"
+      },
+      {
+        "type": "action",
+        "description": "Select a payment gateway provider"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the gateway configuration fields with valid details"
+      },
+      {
+        "type": "action",
+        "description": "Save the gateway configuration"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the gateway is enabled"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved gateway configuration is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Toggle an automation active status",
+    "description": "This verifies that a user can switch an automation between active and paused states from the list.",
+    "category": "Automation Engine",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/automation"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing automation"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the automation status"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the automation status changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated status is visible in the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Delete an admin user",
+    "description": "This verifies that an owner can remove a user and no longer sees that user in the management list after confirming deletion.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/users"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing user for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deleted user is removed from the list"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Customize invoice branding and preview the result",
+    "description": "Verifies that a user can update invoice branding details and immediately see the template preview reflect the changes.",
+    "category": "Invoice Template Customization",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing/template"
+      },
+      {
+        "type": "action",
+        "description": "Upload a company logo"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the company name field with a unique company name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the company address field with a valid address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the company email field with a valid email address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the company phone field with a valid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the company website field with a valid website address"
+      },
+      {
+        "type": "action",
+        "description": "Save the template changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice template preview is updated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the customized invoice branding is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Delete a deal from the pipeline board",
+    "description": "This verifies that a user can remove a deal and confirm it no longer appears on the board.",
+    "category": "Pipeline Management (Flows)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/flow"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing deal for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deal card is removed from the board"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the board no longer shows the deleted deal"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "View invoice payment details",
+    "description": "This verifies that a user can open payment information for an invoice and see the available payment instructions.",
+    "category": "Invoicing & Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing invoice detail view"
+      },
+      {
+        "type": "action",
+        "description": "Open the payment information panel"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify payment instructions are visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice payment details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Revoke an API key",
+    "description": "This verifies that an owner can revoke an API key and see it become disabled in the list.",
+    "category": "API Key Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/api-keys"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing API key for revocation"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the revocation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the API key is shown as disabled"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "View recent reviews from the dashboard",
+    "description": "Verifies that the dashboard shows recent review activity as part of the home summary.",
+    "category": "Dashboard Home",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recent reviews are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify dashboard activity content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC027",
+    "title": "Review automation logs for a campaign",
+    "description": "This verifies that a user can open an automation detail view and inspect recent log activity.",
+    "category": "Automation Engine",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/automation"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing automation detail view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the automation detail page is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify recent automation logs are visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC028",
+    "title": "Customize and save the invoice template",
+    "description": "This verifies that a user can update invoice template settings and see the changes reflected in the preview.",
+    "category": "Invoicing & Payments",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing/template"
+      },
+      {
+        "type": "action",
+        "description": "Update the company details with unique values"
+      },
+      {
+        "type": "action",
+        "description": "Update the accent color"
+      },
+      {
+        "type": "action",
+        "description": "Update the footer text with a unique value"
+      },
+      {
+        "type": "action",
+        "description": "Save the template settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the template preview reflects the updated settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved template configuration is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC029",
+    "title": "Adjust invoice appearance settings",
+    "description": "Verifies that a user can change invoice accent color, tax rate, and footer text and see the updated appearance reflected in the preview.",
+    "category": "Invoice Template Customization",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/invoicing/template"
+      },
+      {
+        "type": "action",
+        "description": "Select a new accent color"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid tax rate into the tax rate field"
+      },
+      {
+        "type": "action",
+        "description": "Fill in custom footer text into the footer text field"
+      },
+      {
+        "type": "action",
+        "description": "Save the template changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the invoice appearance preview is updated"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated tax and footer settings are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC030",
+    "title": "Create a new ticket type",
+    "description": "A staff user can create a ticket type and see it appear in the ticket list.",
+    "category": "Event Tickets",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/tickets/new"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the ticket title field with a unique ticket name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the price field with a valid amount"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the date field with a valid date"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid time"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the location field with a valid location"
+      },
+      {
+        "type": "action",
+        "description": "Submit the ticket form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new ticket type is displayed in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "View role and branch assignments for users",
+    "description": "This verifies that an owner can review the existing users list and inspect each user's role and branch assignment details.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/users"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the users list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify role and branch assignment information is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "View analytics charts",
+    "description": "A staff user can open the analytics dashboard and see the expected performance charts and metrics.",
+    "category": "Analytics Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/analytics"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify revenue trends are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify deal stage distribution is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Review existing API keys",
+    "description": "This verifies that an owner can open the API keys page and inspect key names, prefixes, and status in the list.",
+    "category": "API Key Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/api-keys"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the API keys list is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify key prefixes and status information are visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "Search for a contact in the list",
+    "description": "Verifies that a user can filter the contacts page and see only matching contacts.",
+    "category": "Contact Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/contacts"
+      },
+      {
+        "type": "action",
+        "description": "Search for an existing contact by name"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the contact list is filtered to matching results"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the filtered contact list is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Add a new customer review",
+    "description": "A staff user can add a review manually and see it added to the reviews list.",
+    "category": "Customer Reviews",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/reviews"
+      },
+      {
+        "type": "action",
+        "description": "Start adding a new review"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the reviewer name field with a unique name"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid rating"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the review text field with a valid review message"
+      },
+      {
+        "type": "action",
+        "description": "Submit the review form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new review is displayed in the list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "View the payment gateway webhook endpoint",
+    "description": "Verifies that an administrator can open gateway settings and view the webhook endpoint needed for external setup.",
+    "category": "Payment Gateway Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/gateway"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the webhook section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the webhook endpoint is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the gateway configuration page shows the webhook information"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "View ticket list after searching",
+    "description": "A staff user can search the ticket list and see matching tickets displayed.",
+    "category": "Event Tickets",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/tickets"
+      },
+      {
+        "type": "action",
+        "description": "Search for an existing ticket title"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching tickets are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "View audit log entries with pagination",
+    "description": "Verifies that an admin can open audit logs, browse entries, and move through paginated results to see additional activity.",
+    "category": "Audit Logs",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/audit-logs"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the audit log list"
+      },
+      {
+        "type": "action",
+        "description": "Move to the next page of audit entries"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify audit log entries are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify additional audit log results are displayed after pagination"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Reply to a customer review",
+    "description": "A staff user can write and save a reply on a review and see the reply attached to it.",
+    "category": "Customer Reviews",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/reviews"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing review reply flow"
+      },
+      {
+        "type": "action",
+        "description": "Write a reply message"
+      },
+      {
+        "type": "action",
+        "description": "Save the reply"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the reply is attached to the review"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Show required-field validation on registration",
+    "description": "Verifies that submitting the registration form without required details shows validation feedback and prevents account creation.",
+    "category": "User Authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Switch to the registration form"
+      },
+      {
+        "type": "action",
+        "description": "Submit the registration form without filling required fields"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the registration form remains visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "Filter audit logs by action and entity",
+    "description": "Verifies that an admin can narrow audit logs by action type and entity type and see the filtered results.",
+    "category": "Audit Logs",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/audit-logs"
+      },
+      {
+        "type": "action",
+        "description": "Select an action type filter"
+      },
+      {
+        "type": "action",
+        "description": "Select an entity type filter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the audit log list is narrowed to the selected filters"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching audit log entries are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC042",
+    "title": "View ticket instances for a ticket",
+    "description": "A staff user can open a ticket detail page and review the sold ticket instances.",
+    "category": "Event Tickets",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/tickets"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing ticket"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ticket instances are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC043",
+    "title": "Restore a deleted item",
+    "description": "This verifies that a deleted item can be restored from trash and returns to its original location.",
+    "category": "Trash / Soft Delete",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an authenticated user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/trash"
+      },
+      {
+        "type": "action",
+        "description": "Select a deleted item"
+      },
+      {
+        "type": "action",
+        "description": "Restore the selected item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the restored item is no longer shown in trash"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the restored item is available again in its original list"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC044",
+    "title": "Review audit log summary statistics",
+    "description": "Verifies that an admin can view audit activity summaries for today, the last 30 days, and action-based breakdowns.",
+    "category": "Audit Logs",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/audit-logs"
+      },
+      {
+        "type": "action",
+        "description": "Scroll to the audit statistics section"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify audit statistics are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify today and last 30 days activity summaries are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC045",
+    "title": "View review list and ratings",
+    "description": "A staff user can open the reviews page and see customer reviews with ratings and feedback.",
+    "category": "Customer Reviews",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/reviews"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify customer reviews are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify review ratings are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC046",
+    "title": "Disable an existing payment gateway",
+    "description": "Verifies that an administrator can turn off an active payment gateway and see it removed or marked inactive.",
+    "category": "Payment Gateway Configuration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/gateway"
+      },
+      {
+        "type": "action",
+        "description": "Disable the payment gateway"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the gateway is disabled"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the gateway configuration is no longer active"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC047",
+    "title": "Permanently remove a deleted item",
+    "description": "This verifies that a deleted item can be permanently removed from trash and no longer appears in the deleted items list.",
+    "category": "Trash / Soft Delete",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an authenticated user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/trash"
+      },
+      {
+        "type": "action",
+        "description": "Select a deleted item"
+      },
+      {
+        "type": "action",
+        "description": "Permanently delete the selected item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the deleted item is removed from trash"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC048",
+    "title": "Delete a ticket from the list",
+    "description": "A staff user can delete a ticket from the ticket list and see it removed.",
+    "category": "Event Tickets",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/tickets"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing ticket for deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the ticket is removed from the list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC049",
+    "title": "Show validation feedback for required user fields",
+    "description": "This verifies that the admin user form surfaces validation errors when required fields are missing and prevents submission.",
+    "category": "User Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an owner user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/admin/users"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the empty user form"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify validation errors are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is not added to the list"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC050",
+    "title": "View deleted items by type",
+    "description": "This verifies that an authenticated user can open trash and switch between deleted item categories to see the relevant deleted records.",
+    "category": "Trash / Soft Delete",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials for an authenticated user"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /dashboard/trash"
+      },
+      {
+        "type": "action",
+        "description": "Switch to a different deleted item category"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify deleted items for the selected category are displayed"
+      }
+    ],
+    "priority": "Low"
+  }
+]

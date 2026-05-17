@@ -1,0 +1,452 @@
+version: "2"
+type: frontend
+tech_stack:
+  - language: JavaScript (ESM)
+  - framework: React 18
+  - ui_library: Tailwind CSS 3, Framer Motion, Lucide React
+  - other: Vite 5, React Router DOM 7, Recharts, Zod, Supabase JS, jsPDF, html2canvas
+routes:
+  - path: /login
+    file: src/pages/LoginPage.jsx
+    auth_required: false
+    description: User login and registration page
+  - path: /dashboard
+    file: src/pages/DashboardHome.jsx
+    auth_required: true
+    description: Dashboard home with summary widgets
+  - path: /dashboard/contacts
+    file: src/pages/Contacts.jsx
+    auth_required: true
+    description: Contact list management
+  - path: /dashboard/contacts/new
+    file: src/pages/AddContact.jsx
+    auth_required: true
+    description: Add new contact form
+  - path: /dashboard/automation
+    file: src/pages/Automation.jsx
+    auth_required: true
+    description: Automation list
+  - path: /dashboard/automation/new
+    file: src/pages/AddAutomation.jsx
+    auth_required: true
+    description: Create new automation
+  - path: /dashboard/automation/:id
+    file: src/pages/AutomationDetail.jsx
+    auth_required: true
+    description: Automation detail and logs
+  - path: /dashboard/flow
+    file: src/pages/FlowManagement.jsx
+    auth_required: true
+    description: Pipeline/flow management (Kanban)
+  - path: /dashboard/flow/new
+    file: src/pages/AddFlow.jsx
+    auth_required: true
+    description: Add new flow/deal
+  - path: /dashboard/invoicing
+    file: src/pages/Invoicing.jsx
+    auth_required: true
+    description: Invoice listing and management
+  - path: /dashboard/invoicing/new
+    file: src/pages/AddInvoice.jsx
+    auth_required: true
+    description: Create new invoice
+  - path: /dashboard/invoicing/template
+    file: src/pages/InvoiceTemplate.jsx
+    auth_required: true
+    description: Invoice template customization
+  - path: /dashboard/invoicing/:id
+    file: src/pages/InvoiceDetail.jsx
+    auth_required: true
+    description: Invoice detail view
+  - path: /dashboard/tickets
+    file: src/pages/Tickets.jsx
+    auth_required: true
+    description: Event ticket management
+  - path: /dashboard/tickets/new
+    file: src/pages/AddTicket.jsx
+    auth_required: true
+    description: Create new event ticket
+  - path: /dashboard/tickets/:id
+    file: src/pages/TicketDetail.jsx
+    auth_required: true
+    description: Ticket detail and instances
+  - path: /dashboard/trash
+    file: src/pages/Trash.jsx
+    auth_required: true
+    description: Deleted items (soft delete)
+  - path: /dashboard/analytics
+    file: src/pages/Analytics.jsx
+    auth_required: true
+    description: Analytics dashboard with charts
+  - path: /dashboard/reviews
+    file: src/pages/Reviews.jsx
+    auth_required: true
+    description: Customer reviews management
+  - path: /dashboard/admin/users
+    file: src/pages/admin/UserManagement.jsx
+    auth_required: true
+    description: User management (Owner only)
+  - path: /dashboard/admin/api-keys
+    file: src/pages/admin/ApiKeys.jsx
+    auth_required: true
+    description: API key management
+  - path: /dashboard/admin/audit-logs
+    file: src/pages/admin/AuditLogs.jsx
+    auth_required: true
+    description: Audit log viewer
+  - path: /dashboard/admin/gateway
+    file: src/pages/admin/GatewaySettings.jsx
+    auth_required: true
+    description: Payment gateway configuration
+features:
+  - name: User Authentication
+    description: Login, register, and OAuth (Google/GitHub) authentication
+    files:
+      - src/pages/LoginPage.jsx
+      - src/hooks/useAuth.jsx
+      - src/components/RightPanel.jsx
+      - src/api/auth.js
+    entry_route: /login
+    user_interactions:
+      - Fill email and password fields
+      - Click Login button to submit
+      - Click Register link to switch to registration form
+      - Click Google/GitHub OAuth buttons
+      - See error message on invalid credentials
+      - Redirected to dashboard on success
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/login
+      - method: POST
+        endpoint: /api/auth/register
+      - method: POST
+        endpoint: /api/auth/oauth
+      - method: GET
+        endpoint: /api/auth/me
+    auth_required: false
+  - name: Dashboard Home
+    description: Summary view with metrics, charts, and recent activity
+    files:
+      - src/pages/DashboardHome.jsx
+      - src/components/dashboard/
+    entry_route: /dashboard
+    user_interactions:
+      - View total contacts, flows, invoices, reviews counts
+      - View revenue chart
+      - View flow stage distribution
+      - View recent reviews
+    api_calls: []
+    auth_required: true
+  - name: Contact Management
+    description: CRUD operations for customer contacts
+    files:
+      - src/pages/Contacts.jsx
+      - src/pages/AddContact.jsx
+      - src/api/contacts.js
+      - server/routes/contacts.js
+    entry_route: /dashboard/contacts
+    user_interactions:
+      - View contact list with search
+      - Click Add Contact to create new contact
+      - Edit contact details
+      - Delete contact
+    api_calls:
+      - method: GET
+        endpoint: /api/contacts
+      - method: POST
+        endpoint: /api/contacts
+      - method: PUT
+        endpoint: /api/contacts/:id
+      - method: DELETE
+        endpoint: /api/contacts/:id
+    auth_required: true
+  - name: Automation Engine
+    description: Email automation campaigns with triggers and scheduling
+    files:
+      - src/pages/Automation.jsx
+      - src/pages/AddAutomation.jsx
+      - src/pages/AutomationDetail.jsx
+      - src/api/automations.js
+      - server/routes/automations.js
+    entry_route: /dashboard/automation
+    user_interactions:
+      - View automation campaigns list
+      - Create new automation with trigger event and schedule
+      - Toggle automation active/paused status
+      - View automation logs
+      - Delete automation
+    api_calls:
+      - method: GET
+        endpoint: /api/automations
+      - method: POST
+        endpoint: /api/automations
+      - method: PUT
+        endpoint: /api/automations/:id
+      - method: PUT
+        endpoint: /api/automations/:id/toggle
+      - method: DELETE
+        endpoint: /api/automations/:id
+    auth_required: true
+  - name: Pipeline Management (Flows)
+    description: Kanban-style sales pipeline for tracking deals
+    files:
+      - src/pages/FlowManagement.jsx
+      - src/pages/AddFlow.jsx
+      - src/api/flows.js
+      - server/routes/flows.js
+    entry_route: /dashboard/flow
+    user_interactions:
+      - View Kanban board with deal cards
+      - Drag deals between stages (new, contacted, qualified, proposal, negotiation, closed)
+      - Add new flow/deal
+      - Edit deal details
+      - Delete deal
+    api_calls:
+      - method: GET
+        endpoint: /api/flows
+      - method: POST
+        endpoint: /api/flows
+      - method: PUT
+        endpoint: /api/flows/:id
+      - method: DELETE
+        endpoint: /api/flows/:id
+    auth_required: true
+  - name: Invoicing & Payments
+    description: Create, preview, download invoices with payment tracking
+    files:
+      - src/pages/Invoicing.jsx
+      - src/pages/AddInvoice.jsx
+      - src/pages/InvoiceDetail.jsx
+      - src/pages/InvoiceTemplate.jsx
+    entry_route: /dashboard/invoicing
+    user_interactions:
+      - View invoice list with search and status filters
+      - Create new invoice with customer, items, and payment method
+      - Preview invoice as printable document
+      - Download invoice as PNG or PDF
+      - View payment information popup (QR, bank transfer, e-wallet)
+      - View expired invoices
+      - Delete invoice (moves to trash)
+    api_calls: []
+    auth_required: true
+  - name: Event Tickets
+    description: Create and manage event tickets with unique codes
+    files:
+      - src/pages/Tickets.jsx
+      - src/pages/AddTicket.jsx
+      - src/pages/TicketDetail.jsx
+    entry_route: /dashboard/tickets
+    user_interactions:
+      - View ticket list with search
+      - Create new ticket type with price, date, location
+      - View ticket instances (sold tickets)
+      - Delete ticket
+    api_calls: []
+    auth_required: true
+  - name: Customer Reviews
+    description: Manage customer reviews and ratings with replies
+    files:
+      - src/pages/Reviews.jsx
+      - src/api/reviews.js
+      - server/routes/reviews.js
+    entry_route: /dashboard/reviews
+    user_interactions:
+      - View customer reviews list
+      - Add review manually
+      - Reply to customer reviews
+      - Delete review
+    api_calls:
+      - method: GET
+        endpoint: /api/reviews
+      - method: POST
+        endpoint: /api/reviews
+      - method: PUT
+        endpoint: /api/reviews/:id
+      - method: PUT
+        endpoint: /api/reviews/:id/reply
+      - method: DELETE
+        endpoint: /api/reviews/:id
+    auth_required: true
+  - name: Analytics Dashboard
+    description: Data visualization with charts and metrics
+    files:
+      - src/pages/Analytics.jsx
+    entry_route: /dashboard/analytics
+    user_interactions:
+      - View revenue charts over time
+      - View deal/flow stage distribution
+      - View contact growth chart
+      - View review rating distribution
+    api_calls: []
+    auth_required: true
+  - name: Trash / Soft Delete
+    description: View and restore deleted items
+    files:
+      - src/pages/Trash.jsx
+    entry_route: /dashboard/trash
+    user_interactions:
+      - View deleted contacts, automations, flows, invoices, tickets
+      - Switch between entity tabs
+      - Restore or permanently delete items
+    api_calls: []
+    auth_required: true
+  - name: User Management
+    description: Admin user management (Owner role only)
+    files:
+      - src/pages/admin/UserManagement.jsx
+      - server/routes/users.js
+    entry_route: /dashboard/admin/users
+    user_interactions:
+      - View all users list
+      - Create new user (partner role)
+      - Edit user details and role
+      - Delete user
+    api_calls:
+      - method: GET
+        endpoint: /api/users
+      - method: POST
+        endpoint: /api/users
+      - method: PUT
+        endpoint: /api/users/:id
+      - method: DELETE
+        endpoint: /api/users/:id
+    auth_required: true
+  - name: API Key Management
+    description: Generate and manage API keys for external access
+    files:
+      - src/pages/admin/ApiKeys.jsx
+      - server/routes/apiKeys.js
+    entry_route: /dashboard/admin/api-keys
+    user_interactions:
+      - View API keys list
+      - Create new API key with name and rate limit
+      - View full key (shown once on creation)
+      - Revoke API key
+    api_calls:
+      - method: GET
+        endpoint: /api/api-keys
+      - method: POST
+        endpoint: /api/api-keys
+      - method: DELETE
+        endpoint: /api/api-keys/:id
+    auth_required: true
+  - name: Audit Logs
+    description: View activity logs with filtering and statistics
+    files:
+      - src/pages/admin/AuditLogs.jsx
+      - server/routes/auditLogs.js
+    entry_route: /dashboard/admin/audit-logs
+    user_interactions:
+      - View audit log entries with pagination
+      - Filter by action type and entity type
+      - View audit statistics (today, last 30 days, by action)
+    api_calls:
+      - method: GET
+        endpoint: /api/audit-logs
+      - method: GET
+        endpoint: /api/audit-logs/stats
+    auth_required: true
+  - name: Payment Gateway Configuration
+    description: Configure payment gateway (Midtrans, Xendit, etc.)
+    files:
+      - src/pages/admin/GatewaySettings.jsx
+      - server/routes/gatewayConfig.js
+    entry_route: /dashboard/admin/gateway
+    user_interactions:
+      - Select payment gateway provider
+      - Enter gateway API configuration
+      - Save and enable gateway
+      - View webhook URL
+      - Disable payment gateway
+    api_calls:
+      - method: GET
+        endpoint: /api/gateway-config
+      - method: PUT
+        endpoint: /api/gateway-config
+      - method: DELETE
+        endpoint: /api/gateway-config
+    auth_required: true
+  - name: Invoice Template Customization
+    description: Customize invoice appearance (logo, colors, tax rate)
+    files:
+      - src/pages/InvoiceTemplate.jsx
+      - server/routes/invoiceTemplate.js
+    entry_route: /dashboard/invoicing/template
+    user_interactions:
+      - Upload company logo
+      - Set company name, address, email, phone, website
+      - Set accent color
+      - Set tax rate
+      - Set footer text
+      - Preview template changes in real-time
+    api_calls:
+      - method: GET
+        endpoint: /api/invoice-template
+      - method: PUT
+        endpoint: /api/invoice-template
+    auth_required: true
+  - name: External API (REST)
+    description: Programmatic access via API keys for contacts, automations, flows, reviews
+    files:
+      - server/routes/external.js
+      - server/middleware/apiKeyAuth.js
+    entry_route: null
+    user_interactions: []
+    api_calls:
+      - method: GET
+        endpoint: /api/external/contacts
+      - method: POST
+        endpoint: /api/external/contacts
+      - method: PUT
+        endpoint: /api/external/contacts/:id
+      - method: DELETE
+        endpoint: /api/external/contacts/:id
+      - method: GET
+        endpoint: /api/external/automations
+      - method: POST
+        endpoint: /api/external/automations
+      - method: DELETE
+        endpoint: /api/external/automations/:id
+      - method: GET
+        endpoint: /api/external/flows
+      - method: POST
+        endpoint: /api/external/flows
+      - method: DELETE
+        endpoint: /api/external/flows/:id
+      - method: GET
+        endpoint: /api/external/reviews
+      - method: POST
+        endpoint: /api/external/reviews
+      - method: DELETE
+        endpoint: /api/external/reviews/:id
+    auth_required: true
+  - name: Webhook Handler
+    description: Payment gateway webhook endpoint for transaction status updates
+    files:
+      - server/routes/webhook.js
+      - server/lib/gateways/
+    entry_route: null
+    user_interactions: []
+    api_calls:
+      - method: POST
+        endpoint: /api/webhook/:gateway/:token
+    auth_required: false
+known_limitations:
+  - issue: Invoicing, Tickets, and some other features use mock data instead of real backend API calls
+    location: src/utils/mockData.js
+    impact: Invoice, ticket, and some other data is simulated and not persisted via the REST API
+  - issue: Invoice template customization template field uses JSON column in MySQL
+    location: server/routes/invoiceTemplate.js
+    impact: PostgreSQL syntax ::jsonb used in gatewayConfig.js line 69 may cause issues with MySQL
+  - issue: Gateway config delete route uses PostgreSQL jsonb syntax
+    location: server/routes/gatewayConfig.js
+    impact: Will fail on MySQL since ::jsonb cast syntax is PostgreSQL-specific
+  - issue: No dedicated invoices or tickets tables/routes on the backend
+    location: server/routes/
+    impact: Invoicing, ticket CRUD, and analytics data are entirely client-side via mockData.js using Supabase
+  - issue: Refresh/loading states could be improved across the app
+    location: src/pages/
+    impact: Some pages lack loading skeletons and error boundary handling
+  - issue: Soft delete (trash) uses mockData functions and only works client-side
+    location: src/pages/Trash.jsx
+    impact: Trash data is ephemeral and lost on page refresh
