@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Ticket, MapPin, Calendar, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban } from 'lucide-react'
-import { getTicketInstances } from '../utils/mockData'
+import { getTicketInstances } from '../services/dataService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 
 function formatPurchasedDate(dateStr) {

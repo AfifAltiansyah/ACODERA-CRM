@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
+import crypto from 'crypto'
 import { query } from '../db.js'
 import { generateToken, authenticate } from '../middleware/auth.js'
 import { validate, loginSchema, registerSchema, oauthSchema } from '../middleware/validate.js'
@@ -101,7 +102,7 @@ router.post('/oauth', validate(oauthSchema), async (req, res) => {
 
     let user
     if (users.length === 0) {
-      const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12)
+      const tempPassword = crypto.randomBytes(16).toString('hex')
       const hashedPassword = await bcrypt.hash(tempPassword, 10)
       const displayName = name || email.split('@')[0]
       const result = await query(

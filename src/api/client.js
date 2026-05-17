@@ -1,5 +1,13 @@
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+let onUnauthorized = () => {
+  window.location.href = '/login'
+}
+
+export function setUnauthorizedHandler(handler) {
+  onUnauthorized = handler
+}
+
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem('crm-auth-token')
 
@@ -14,7 +22,7 @@ async function apiFetch(path, options = {}) {
   if (res.status === 401) {
     localStorage.removeItem('crm-auth-token')
     localStorage.removeItem('crm-auth-user')
-    window.location.href = '/login'
+    onUnauthorized()
     throw new Error('Unauthorized')
   }
 

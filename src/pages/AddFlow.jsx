@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { X, Save, ArrowLeft } from 'lucide-react'
-import { addFlow } from '../utils/mockData'
+import { addFlow } from '../services/dataService'
 
 const STAGES = [
   { key: 'new', label: 'New Lead' },

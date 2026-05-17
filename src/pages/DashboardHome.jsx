@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Users, GitBranch, DollarSign, Star, TrendingUp, Plus, Zap, Receipt, Ticket } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { getContacts, getFlows, getReviews, getInvoices } from '../utils/mockData'
+import { getContacts, getFlows, getReviews, getInvoices } from '../services/dataService'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }

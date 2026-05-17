@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Filter, MessageSquare } from 'lucide-react'
-import { getReviews, replyToReview } from '../utils/mockData'
+import { getReviews, replyToReview } from '../services/dataService'
 
 function StarRating({ rating, size = 16 }) {
   return (

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { X, ArrowLeft } from 'lucide-react'
-import { addTicket } from '../utils/mockData'
+import { addTicket } from '../services/dataService'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 import { useCurrency } from '../hooks/useCurrency.jsx'
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Trash2 } from 'lucide-react'
-import { getContacts, deleteContact } from '../utils/mockData'
+import { getContacts, deleteContact } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 
 export function ContactsPage() {

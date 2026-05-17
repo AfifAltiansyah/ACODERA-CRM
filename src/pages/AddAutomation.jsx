@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { X, Save, ArrowLeft, FileText } from 'lucide-react'
-import { addAutomation } from '../utils/mockData'
+import { addAutomation } from '../services/dataService'
 import { loadTemplate } from './InvoiceTemplate'
 
 const TRIGGER_OPTIONS = [

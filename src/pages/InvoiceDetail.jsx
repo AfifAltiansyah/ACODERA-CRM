@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban, CreditCard, Wallet, Landmark, QrCode, Phone, Mail, Timer } from 'lucide-react'
-import { getInvoices, getContacts, updateTransactionStatus } from '../utils/mockData'
+import { getInvoices, getContacts, updateTransactionStatus } from '../services/dataService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 import { DEFAULT_TEMPLATE, loadTemplate } from './InvoiceTemplate'
 

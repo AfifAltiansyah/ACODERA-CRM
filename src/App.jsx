@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ThemeProvider } from './hooks/useTheme'
 import { AuthProvider } from './hooks/useAuth'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -8,11 +8,11 @@ import { LoginPage } from './pages/LoginPage'
 import { supabase } from './lib/supabase'
 import { storeSession } from './utils/auth'
 import { DashboardHome } from './pages/DashboardHome'
-import { AddContactPage as AddContact } from './pages/AddContact'
-import { AddAutomationPage as AddAutomation } from './pages/AddAutomation'
-import { AddFlowPage as AddFlow } from './pages/AddFlow'
-import { AddInvoicePage as AddInvoice } from './pages/AddInvoice'
-import { AddTicketPage as AddTicket } from './pages/AddTicket'
+import { AddContactPage } from './pages/AddContact'
+import { AddAutomationPage } from './pages/AddAutomation'
+import { AddFlowPage } from './pages/AddFlow'
+import { AddInvoicePage } from './pages/AddInvoice'
+import { AddTicketPage } from './pages/AddTicket'
 import { ContactsPage } from './pages/Contacts'
 import { AutomationPage } from './pages/Automation'
 import { AutomationDetailPage } from './pages/AutomationDetail'
@@ -33,13 +33,17 @@ import { AuditLogsPage } from './pages/admin/AuditLogs'
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 function OAuthHandler() {
+  const location = useLocation()
+
   useEffect(() => {
     let cancelled = false
 
     const processSession = async (session) => {
       if (cancelled || !session?.user?.email) return
+
       const userMeta = session.user.user_metadata || {}
       const displayName = userMeta.full_name || userMeta.name || session.user.email.split('@')[0]
+
       try {
         const res = await fetch(`${API_BASE}/auth/oauth`, {
           method: 'POST',
@@ -48,8 +52,10 @@ function OAuthHandler() {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'OAuth login failed')
+
         storeSession(data)
         await supabase.auth.signOut()
+
         if (!cancelled) window.location.href = '/dashboard'
       } catch (err) {
         console.error('OAuth error:', err)
@@ -66,10 +72,14 @@ function OAuthHandler() {
       }
     })
 
-    return () => { cancelled = true; subscription?.unsubscribe() }
+    return () => {
+      cancelled = true
+      subscription?.unsubscribe()
+    }
   }, [])
 
-  return null
+  // Only process OAuth on the login page
+  return location.pathname === '/login' ? null : null
 }
 
 export default function App() {
@@ -90,18 +100,18 @@ export default function App() {
             >
               <Route index element={<DashboardHome />} />
               <Route path="contacts" element={<ContactsPage />} />
-              <Route path="contacts/new" element={<AddContact />} />
+              <Route path="contacts/new" element={<AddContactPage />} />
               <Route path="automation" element={<AutomationPage />} />
-              <Route path="automation/new" element={<AddAutomation />} />
+              <Route path="automation/new" element={<AddAutomationPage />} />
               <Route path="automation/:id" element={<AutomationDetailPage />} />
               <Route path="flow" element={<FlowManagementPage />} />
-              <Route path="flow/new" element={<AddFlow />} />
+              <Route path="flow/new" element={<AddFlowPage />} />
               <Route path="invoicing" element={<InvoicingPage />} />
-              <Route path="invoicing/new" element={<AddInvoice />} />
+              <Route path="invoicing/new" element={<AddInvoicePage />} />
               <Route path="invoicing/template" element={<InvoiceTemplatePage />} />
               <Route path="invoicing/:id" element={<InvoiceDetailPage />} />
               <Route path="tickets" element={<TicketsPage />} />
-              <Route path="tickets/new" element={<AddTicket />} />
+              <Route path="tickets/new" element={<AddTicketPage />} />
               <Route path="tickets/:id" element={<TicketDetailPage />} />
               <Route path="trash" element={<TrashPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />

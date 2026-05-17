@@ -7,7 +7,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useCurrency, CURRENCIES } from '../../hooks/useCurrency.jsx'
 import { useNotifications } from '../../hooks/useNotifications'
 import { NotificationPanel } from './NotificationPanel'
-import { getContacts, getFlows, getInvoices, getTickets } from '../../utils/mockData'
+import { getContacts, getFlows, getInvoices, getTickets } from '../../services/dataService'
 
 const categories = [
   { key: 'contacts', label: 'Contacts', icon: Users, color: 'text-[var(--accent)]', bgColor: 'bg-[var(--accent)]/10', path: '/dashboard/contacts', subtitle: email => email, getSubtitle: (item) => item?.email },

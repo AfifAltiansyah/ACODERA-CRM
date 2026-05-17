@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Circle } from 'lucide-react'
-import { getTickets, addTicket, deleteTicket } from '../utils/mockData'
+import { getTickets, addTicket, deleteTicket } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 

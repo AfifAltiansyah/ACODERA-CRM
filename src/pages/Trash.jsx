@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Trash2, RefreshCw, X, AlertTriangle } from 'lucide-react'
 import { getTrashedItems, removeFromTrash, restoreContact, restoreAutomation, restoreFlow, restoreInvoice, restoreTicket } from '../utils/trashService'
-import { addContact } from '../utils/mockData'
-import { addAutomation } from '../utils/mockData'
-import { addFlow } from '../utils/mockData'
-import { addInvoice } from '../utils/mockData'
-import { addTicket } from '../utils/mockData'
+import { addContact, addAutomation, addFlow, addInvoice, addTicket } from '../services/dataService'
 
 const ENTITY_LABELS = {
   contact: 'Contact',

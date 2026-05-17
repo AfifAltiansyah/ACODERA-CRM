@@ -5,7 +5,7 @@ import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
 } from 'recharts'
-import { getContacts, getFlows, getInvoices, getReviews } from '../utils/mockData'
+import { getContacts, getFlows, getInvoices, getReviews } from '../services/dataService'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 
 const COLORS = ['#0066cc', '#2997ff', '#66b3ff', '#99ccff', '#cce0ff']

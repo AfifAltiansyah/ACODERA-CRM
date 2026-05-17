@@ -35,9 +35,23 @@ export { supabase }
 // Drop-in replacement for the old MySQL `query()` function.
 // Accepts a table name and a callback that receives a Supabase query builder.
 // Also supports raw SQL strings for backward compatibility.
+//
+// DEPRECATED: The SQL-string form is deprecated. Use the Supabase query builder directly:
+//   query('users', q => q.select('*').eq('email', email))
+// instead of:
+//   query('SELECT * FROM users WHERE email = ?', [email])
+let sqlParserWarned = false
+
 export function query(tableOrSql, paramsOrCallback) {
   // Old style: query('SELECT * FROM users WHERE email = ?', ['a@b.com'])
   if (typeof tableOrSql === 'string') {
+    if (!sqlParserWarned) {
+      console.warn(
+        '[DEPRECATED] query() with SQL strings is deprecated. ' +
+        'Use the Supabase query builder instead: query("table", q => q.select("*").eq(...))'
+      )
+      sqlParserWarned = true
+    }
     const sql = tableOrSql
     const params = Array.isArray(paramsOrCallback) ? paramsOrCallback : []
 

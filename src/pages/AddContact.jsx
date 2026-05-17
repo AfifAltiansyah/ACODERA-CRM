@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { X, Save, ArrowLeft } from 'lucide-react'
-import { addContact } from '../utils/mockData'
+import { addContact } from '../services/dataService'
 
 export function AddContactPage() {
   const navigate = useNavigate()

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, X, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react'
-import { getFlows, addFlow, moveFlow, deleteFlow } from '../utils/mockData'
+import { getFlows, addFlow, moveFlow, deleteFlow } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 

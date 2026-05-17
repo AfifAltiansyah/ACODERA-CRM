@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, Plus, Trash2, Mail, MessageSquare, Target, Megaphone, FileText, ChevronRight } from 'lucide-react'
-import { getAutomations, toggleAutomation, deleteAutomation } from '../utils/mockData'
+import { getAutomations, toggleAutomation, deleteAutomation } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 
 const typeIcons = { 'Email Drip': Mail, 'SMS Follow-up': MessageSquare, 'Lead Scoring': Target, 'Marketing Campaign': Megaphone, 'Invoice Reminder': FileText }
