@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
@@ -251,6 +252,157 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
 </html>`
 }
 
+async function generateInvoicePdf(inv: any, template: any) {
+  try {
+    const DEFAULT_TEMPLATE = {
+      companyName: 'Acodera CRM', logoInitial: 'A', logoUrl: '',
+      accentColor: '#1e40af', address: '', email: '', phone: '',
+      website: '', footerText: 'Thank you for your business!', taxRate: 0, currencySymbol: 'Rp',
+    }
+    const tpl = { ...DEFAULT_TEMPLATE, ...(template || {}) }
+    if (tpl.companyName === null || tpl.companyName === undefined) tpl.companyName = DEFAULT_TEMPLATE.companyName
+    const cur = tpl.currencySymbol || 'Rp'
+    const taxRate = tpl.taxRate || 0
+    const taxAmount = (inv.total_amount || 0) * (taxRate / 100)
+    const totalWithTax = (inv.total_amount || 0) + taxAmount
+    const accentHex = tpl.accentColor || '#1e40af'
+    const accent = { r: parseInt(accentHex.slice(1, 3), 16) / 255, g: parseInt(accentHex.slice(3, 5), 16) / 255, b: parseInt(accentHex.slice(5, 7), 16) / 255 }
+    const customerName = inv.buyer_name || 'Walk-in Customer'
+    const dt = inv.purchased_at ? new Date(inv.purchased_at) : new Date(inv.created_at)
+    const dateTime = dt.toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })
+
+    const pdfDoc = await PDFDocument.create()
+    const page = pdfDoc.addPage([595.28, 841.89])
+    const { width, height } = page.getSize()
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    const margin = 56
+
+    function drawText(text: string, x: number, y: number, fnt: any, size: number, color: any) {
+      page.drawText(text, { x, y, font: fnt, size, color: color || rgb(0, 0, 0) })
+    }
+    function drawRect(x: number, y: number, w: number, h: number, fillColor: any) {
+      page.drawRectangle({ x, y, width: w, height: h, color: fillColor })
+    }
+    function drawLine(x1: number, y1: number, x2: number, y2: number, color: any, lineWidth = 1) {
+      page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, color: color || rgb(0.8, 0.8, 0.8), thickness: lineWidth })
+    }
+
+    async function embedLogo() {
+      if (!tpl.logoUrl) return null
+      try {
+        const res = await fetch(tpl.logoUrl)
+        if (!res.ok) return null
+        const buf = new Uint8Array(await res.arrayBuffer())
+        if (buf[0] === 0x89) return await pdfDoc.embedPng(buf)
+        if (buf[0] === 0xFF) return await pdfDoc.embedJpg(buf)
+        const ext = tpl.logoUrl.split('.').pop()?.toLowerCase()
+        if (ext === 'png') return await pdfDoc.embedPng(buf)
+        if (ext === 'jpg' || ext === 'jpeg') return await pdfDoc.embedJpg(buf)
+      } catch (e) { console.error('[PDF] Logo embed failed:', e) }
+      return null
+    }
+    let yPos = height - 48
+    drawRect(0, height - 88, width, 88, accent)
+    const logo = await embedLogo()
+    let nameX = margin
+    if (logo) {
+      const logoDims = logo.scaleToFit(36, 36)
+      page.drawImage(logo, { x: margin, y: height - 48 - logoDims.height, width: logoDims.width, height: logoDims.height })
+      nameX = margin + logoDims.width + 12
+    } else if (tpl.logoInitial) {
+      drawRect(margin, height - 48 - 36, 36, 36, accent)
+      drawText(tpl.logoInitial, margin + 10, height - 30, fontBold, 16, rgb(1, 1, 1))
+      nameX = margin + 36 + 12
+    }
+    drawText(tpl.companyName, nameX, height - 58, fontBold, 20, rgb(1, 1, 1))
+    const invText = 'INVOICE'
+    drawText(invText, width - margin - fontBold.widthOfTextAtSize(invText, 24), height - 54, fontBold, 24, rgb(1, 1, 1))
+    const tidText = inv.transaction_id || ''
+    drawText(tidText, width - margin - fontBold.widthOfTextAtSize(tidText, 12), height - 78, font, 12, rgb(0.85, 0.85, 0.85))
+    const dateText = `Date: ${dateTime}`
+    drawText(dateText, width - margin - font.widthOfTextAtSize(dateText, 10), height - 92, font, 10, rgb(0.85, 0.85, 0.85))
+
+    const statusLabel = 'Pending'
+    const statusW = fontBold.widthOfTextAtSize(statusLabel, 10) + 24
+    drawRect(width - margin - statusW, height - 112, statusW, 20, rgb(1, 1, 1))
+    drawText(statusLabel, width - margin - statusW + 12, height - 107, fontBold, 10, rgb(0.796, 0.541, 0.016))
+
+    yPos = height - 130
+    drawText(tpl.address, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482))
+    yPos -= 16
+    drawText(`${tpl.email} | ${tpl.phone}`, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482))
+    yPos -= 24
+    drawLine(margin, yPos, width - margin, yPos, accent, 2)
+    yPos -= 24
+
+    drawText('Bill To', margin, yPos, fontBold, 9, rgb(0.58, 0.58, 0.62))
+    yPos -= 18
+    drawText(customerName, margin, yPos, fontBold, 13, rgb(0.059, 0.059, 0.141))
+    yPos -= 18
+    if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
+    if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
+
+    const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName)
+    if (paymentDetail) {
+      const payX = width / 2 + 20
+      drawText('Payment Details', payX, yPos + 20, fontBold, 9, rgb(0.58, 0.58, 0.62))
+      drawText(`Method: ${paymentDetail.label}`, payX, yPos + 2, font, 11, rgb(0.2, 0.2, 0.28))
+      drawText(`Info: ${paymentDetail.detail}`, payX, yPos - 14, font, 11, rgb(0.2, 0.2, 0.28))
+    }
+    yPos -= 40
+
+    if (inv.item_name || inv.ticket_title) {
+      const ticketName = inv.item_name || inv.ticket_title
+      drawRect(margin, yPos - 24, width - margin * 2, 28, rgb(0.941, 0.969, 1))
+      page.drawRectangle({ x: margin, y: yPos - 24, width: width - margin * 2, height: 28, borderColor: rgb(0.702, 0.851, 1), borderWidth: 1 })
+      drawText(`Ticket: ${ticketName}`, margin + 12, yPos - 6, font, 10, rgb(0, 0.4, 0.8))
+      yPos -= 36
+    }
+
+    const itemCode = inv.unique_code || '-'
+    const qty = inv.quantity || 1
+    const priceText = `${cur}${Number(inv.price_per_unit || 0).toLocaleString()}`
+    const totalText = `${cur}${Number(inv.total_amount || 0).toLocaleString()}`
+
+    drawRect(margin, yPos - 22, width - margin * 2, 22, rgb(0.945, 0.961, 0.976))
+    const cols = [
+      { header: 'Item', x: margin, w: width * 0.4 },
+      { header: 'Qty', x: margin + width * 0.4, w: width * 0.1 },
+      { header: 'Price/Unit', x: margin + width * 0.5, w: width * 0.2 },
+      { header: 'Total', x: margin + width * 0.7, w: width * 0.2 },
+    ]
+    for (const col of cols) { drawText(col.header, col.x + 8, yPos - 6, fontBold, 8, rgb(0.392, 0.392, 0.482)) }
+    yPos -= 28
+    drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
+    drawText(itemCode, margin + 8, yPos - 14, font, 11, rgb(0.392, 0.392, 0.482))
+    drawText(String(qty), cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(String(qty), 11) / 2, yPos - 14, font, 11, rgb(0, 0, 0))
+    drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 11), yPos - 14, font, 11, rgb(0, 0, 0))
+    drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 11), yPos - 14, fontBold, 11, rgb(0, 0, 0))
+    yPos -= 28
+
+    const totalX = width - margin - 200
+    drawText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, totalX, yPos, font, 11, rgb(0.392, 0.392, 0.482))
+    yPos -= 18
+    drawText(`Tax (${taxRate}%): ${cur}${taxAmount.toLocaleString()}`, totalX, yPos, font, 11, rgb(0.392, 0.392, 0.482))
+    yPos -= 24
+    drawLine(totalX, yPos, width - margin, yPos, accent, 2)
+    yPos -= 20
+    drawText(`Total Due: ${cur}${totalWithTax.toLocaleString()}`, totalX, yPos, fontBold, 16, accent)
+
+    yPos = 40
+    drawLine(margin, yPos + 20, width - margin, yPos + 20, rgb(0.886, 0.91, 0.941), 1)
+    const footerText = `${tpl.footerText} | ${tpl.companyName} | ${tpl.website}`
+    drawText(footerText, (width - font.widthOfTextAtSize(footerText, 9)) / 2, yPos + 6, font, 9, rgb(0.58, 0.58, 0.62))
+
+    const pdfBytes = await pdfDoc.save()
+    return btoa(String.fromCharCode(...new Uint8Array(pdfBytes)))
+  } catch (err) {
+    console.error('[PDF] Generation failed:', err)
+    return null
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -379,6 +531,7 @@ serve(async (req) => {
       const isInvoiceEvent = event === 'invoice.paid' || event === 'invoice.overdue'
       let invoiceTemplate: any = payloadTemplate || null
       let txnData: any = null
+      let serverPdfBase64: string | null = null
 
       if (isInvoiceEvent && extraData.invoice_id) {
         try {
@@ -423,6 +576,9 @@ serve(async (req) => {
                 ? `Payment Received - ${txnData.transaction_id}`
                 : `Payment Reminder - ${txnData.transaction_id}`)
             }
+
+            // Generate PDF server-side (replaces client-side PDF attachment)
+            serverPdfBase64 = await generateInvoicePdf(txnData, invoiceTemplate)
           }
         } catch (err) {
           console.error('Failed to fetch invoice data:', err)
@@ -477,8 +633,7 @@ serve(async (req) => {
                 to: [{ email }],
                 subject,
                 htmlContent: htmlBody,
-                ...(attachment ? { attachment: [attachment] } : {}),
-                ...(pdfAttachment ? { attachment: [...(attachment ? [attachment] : []), pdfAttachment] } : {}),
+                ...(serverPdfBase64 ? { attachment: [{ name: `Invoice-${txnData?.transaction_id || extraData.invoice_id}.pdf`, content: serverPdfBase64 }] } : {}),
               }),
             })
             const emailData = await emailResp.json()

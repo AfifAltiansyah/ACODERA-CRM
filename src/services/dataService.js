@@ -1186,23 +1186,9 @@ export async function refundTicketInstance(instanceId) {
 
 export async function triggerAutomationEvent(event, data = {}, attachment) {
   try {
-    const invoiceId = data.invoice_id
-    let finalAttachment = attachment
-
-    if (invoiceId && ['invoice.created', 'invoice.paid', 'invoice.overdue'].includes(event)) {
-      const invoiceData = await getInvoiceByTransactionId(invoiceId)
-      if (invoiceData) {
-        const template = await loadTemplate()
-        finalAttachment = await generateInvoicePdfBase64(invoiceData, template)
-        finalAttachment = { name: `Invoice-${invoiceId}.pdf`, content: finalAttachment }
-      }
-    }
-
-    const payload = finalAttachment ? { ...data, attachment: finalAttachment } : data
-
     const { data: result, error } = await supabase.functions.invoke('trigger-automation', {
       params: { event },
-      body: payload,
+      body: data,
     })
 
     if (error) {
