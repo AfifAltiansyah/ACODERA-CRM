@@ -163,9 +163,7 @@ export function AddAutomationPage() {
       return
     }
     const trigger =
-      form.type === 'Invoice Reminder'
-        ? 'invoice.overdue'
-        : form.trigger === 'custom'
+      form.trigger === 'custom'
         ? form.triggerCustom
         : form.trigger
     if (!trigger) {
