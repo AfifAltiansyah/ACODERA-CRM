@@ -1186,9 +1186,11 @@ export async function refundTicketInstance(instanceId) {
 
 export async function triggerAutomationEvent(event, data = {}, attachment) {
   try {
+    const payload = attachment ? { ...data, attachment } : data
+
     const { data: result, error } = await supabase.functions.invoke('trigger-automation', {
       params: { event },
-      body: data,
+      body: payload,
     })
 
     if (error) {
