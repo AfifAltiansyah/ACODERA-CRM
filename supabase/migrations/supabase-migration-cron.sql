@@ -18,7 +18,7 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://rthxlprgtfuhntpcdhsh.supabase.co/functions/v1/process-scheduled-emails',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_SERVICE_ROLE_KEY"}'::jsonb,
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aHhscHJndGZ1aG50cGNkaHNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODM0OTM1NSwiZXhwIjoyMDkzOTI1MzU1fQ.4CXw_d9a0XZgtRUnpiyua2OIiFhSxxeaMsP2h10Nxkk"}'::jsonb,
     body := '{}'::jsonb
   );
   $$

@@ -455,6 +455,7 @@ serve(async (req) => {
       .from('automations')
       .select('*')
       .eq('trigger_event', event)
+      .eq('schedule_type', 'immediate')
       .eq('status', 'active')
 
     if (fetchError) {
@@ -528,7 +529,7 @@ serve(async (req) => {
       const fromName = auto.from_name || 'Acodera CRM'
 
       // For invoice events, fetch actual transaction data and generate invoice preview
-      const isInvoiceEvent = event === 'invoice.paid' || event === 'invoice.overdue'
+      const isInvoiceEvent = event === 'invoice.created' || event === 'invoice.paid' || event === 'invoice.overdue'
       let invoiceTemplate: any = payloadTemplate || null
       let txnData: any = null
       let serverPdfBase64: string | null = null
@@ -633,7 +634,12 @@ serve(async (req) => {
                 to: [{ email }],
                 subject,
                 htmlContent: htmlBody,
-                ...(serverPdfBase64 ? { attachment: [{ name: `Invoice-${txnData?.transaction_id || extraData.invoice_id}.pdf`, content: serverPdfBase64 }] } : {}),
+                ...((attachment || pdfAttachment || serverPdfBase64) ? {
+                  attachment: [{
+                    name: `Invoice-${(txnData?.transaction_id || extraData.invoice_id || 'document')}.pdf`,
+                    content: (attachment?.content || pdfAttachment?.content || serverPdfBase64 || ''),
+                  }]
+                } : {}),
               }),
             })
             const emailData = await emailResp.json()

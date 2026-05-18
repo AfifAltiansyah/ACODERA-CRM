@@ -822,28 +822,6 @@ export async function addInvoice(invoice) {
       entityId: transactionId,
       link: `/dashboard/invoicing/${transactionId}`,
     })
-    if ((invoice.status || 'pending') !== 'paid') {
-      triggerAutomationEvent('invoice.overdue', {
-        contact_email: invoice.customerEmail,
-        contact_name: invoice.customerName,
-        data: {
-          invoice_id: transactionId,
-          amount: Number(invoice.pricePerUnit) * qty,
-          buyer_email: invoice.customerEmail,
-          buyer_name: invoice.customerName,
-          buyer_phone: invoice.customerPhone || '',
-          itemName: invoice.itemName || '',
-          quantity: String(qty),
-          pricePerUnit: String(Number(invoice.pricePerUnit)),
-      },
-    }, invoicePdf)
-    insertNotification({
-      type: 'invoice', title: 'Invoice paid',
-      message: `${invoice.transactionId} — Rp${(Number(invoice.totalAmount) || 0).toLocaleString()}`,
-      entityId: invoice.transactionId,
-      link: `/dashboard/invoicing/${invoice.transactionId}`,
-    })
-  }
     if ((invoice.status || 'pending') === 'paid') {
       triggerAutomationEvent('invoice.paid', {
         contact_email: invoice.customerEmail,
@@ -936,27 +914,6 @@ export async function addInvoice(invoice) {
     entityId: invoice.transactionId,
     link: `/dashboard/invoicing/${invoice.transactionId}`,
   })
-  if ((invoice.status || 'pending') !== 'paid') {
-    triggerAutomationEvent('invoice.overdue', {
-      contact_email: invoice.customerEmail,
-      contact_name: invoice.customerName,
-      data: {
-        invoice_id: invoice.transactionId,
-        amount: invoice.totalAmount,
-        buyer_email: invoice.customerEmail,
-        buyer_name: invoice.customerName,
-        itemName: invoice.itemName || invoice.itemCode || '',
-        quantity: String(Number(invoice.quantity) || 1),
-        pricePerUnit: String(Number(invoice.pricePerUnit)),
-      },
-    }, invoicePdf)
-    insertNotification({
-      type: 'invoice', title: 'Invoice overdue',
-      message: `${invoice.transactionId} — Rp${(Number(invoice.totalAmount) || 0).toLocaleString()}`,
-      entityId: invoice.transactionId,
-      link: `/dashboard/invoicing/${invoice.transactionId}`,
-    })
-  }
   if ((invoice.status || 'pending') === 'paid') {
     triggerAutomationEvent('invoice.paid', {
       contact_email: invoice.customerEmail,

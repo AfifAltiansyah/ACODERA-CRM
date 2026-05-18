@@ -15,19 +15,27 @@ export function NotificationProvider({ children }) {
   }, [])
 
   const fetchUnreadCount = useCallback(async () => {
-    const branch = currentBranchId()
-    let query = supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('read', false)
-    if (branch) query = query.eq('branch', branch)
-    const { count } = await query
-    setUnreadCount(count || 0)
+    try {
+      const branch = currentBranchId()
+      let query = supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('read', false)
+      if (branch) query = query.eq('branch', branch)
+      const { count } = await query
+      setUnreadCount(count || 0)
+    } catch {
+      // Notifications are non-critical
+    }
   }, [currentBranchId])
 
   const fetchNotifications = useCallback(async () => {
-    const branch = currentBranchId()
-    let query = supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20)
-    if (branch) query = query.eq('branch', branch)
-    const { data } = await query
-    setNotifications(data || [])
+    try {
+      const branch = currentBranchId()
+      let query = supabase.from('notifications').select('*').order('created_at', { ascending: false }).limit(20)
+      if (branch) query = query.eq('branch', branch)
+      const { data } = await query
+      setNotifications(data || [])
+    } catch {
+      // Notifications are non-critical
+    }
   }, [currentBranchId])
 
   useEffect(() => {
