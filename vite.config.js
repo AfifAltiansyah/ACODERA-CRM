@@ -12,7 +12,7 @@ const CSP_DEV = [
   "script-src 'self' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `font-src 'self' https://fonts.gstatic.com`,
-  `connect-src 'self' ${supabaseUrl} wss://${supabaseUrl.replace('https://', '')}`,
+  `connect-src 'self' ${supabaseUrl} wss://${supabaseUrl.replace('https://', '')} https://cdn.jsdelivr.net https://latest.currency-api.pages.dev`,
   "img-src 'self' data: blob:",
   "frame-src 'self'",
 ].join('; ') + ';'
@@ -24,7 +24,7 @@ const CSP_PROD = [
   "script-src 'self'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   `font-src 'self' https://fonts.gstatic.com`,
-  `connect-src 'self' ${supabaseUrl} wss://${supabaseUrl.replace('https://', '')}`,
+  `connect-src 'self' ${supabaseUrl} wss://${supabaseUrl.replace('https://', '')} https://cdn.jsdelivr.net https://latest.currency-api.pages.dev`,
   "img-src 'self' data: blob:",
   "frame-src 'self'",
 ].join('; ') + ';'
