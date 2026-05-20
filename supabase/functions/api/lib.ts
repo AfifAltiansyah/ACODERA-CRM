@@ -41,6 +41,7 @@ export function corsHeaders(): Record<string, string> {
     'Access-Control-Allow-Origin': getCorsOrigin(),
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-api-key, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   }
 }

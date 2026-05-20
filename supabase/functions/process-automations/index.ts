@@ -259,9 +259,15 @@ async function generateInvoicePdf(inv: any, template: any, branchId?: string) {
     drawText(footerText, (width - font.widthOfTextAtSize(footerText, 9)) / 2, yPos + 6, font, 9, rgb(0.58, 0.58, 0.62))
 
     const pdfBytes = await pdfDoc.save()
-    return btoa(String.fromCharCode(...new Uint8Array(pdfBytes)))
+    const bytes = new Uint8Array(pdfBytes)
+    let binary = ''
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i])
+    }
+    return btoa(binary)
   } catch (err) {
-    console.error('[PDF] Generation failed:', err)
+    console.error('[PDF] Generation failed:', err instanceof Error ? err.message : String(err))
+    if (err instanceof Error && err.stack) console.error('[PDF] Stack:', err.stack)
     return null
   }
 }
