@@ -17,13 +17,16 @@ export function generateToken(user) {
 
 export function authenticate(req, res, next) {
   const authHeader = req.headers.authorization
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.split(' ')[1]
+    : req.cookies?.token
+
+  if (!token) {
     return res.status(401).json({ error: 'Authentication required' })
   }
 
-  const token = authHeader.split(' ')[1]
   try {
-    const decoded = jwt.verify(token, JWT_SECRET)
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] })
     req.user = decoded
     next()
   } catch {

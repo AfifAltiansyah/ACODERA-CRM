@@ -7,12 +7,53 @@ import { validate, loginSchema, registerSchema, oauthSchema } from '../middlewar
 
 const router = Router()
 
+const MAX_LOGIN_ATTEMPTS = 5
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000
+const loginAttempts = new Map()
+
+function checkLockout(email) {
+  const entry = loginAttempts.get(email)
+  if (!entry) return null
+  if (Date.now() > entry.lockedUntil) {
+    loginAttempts.delete(email)
+    return null
+  }
+  return entry
+}
+
+function recordFailedAttempt(email) {
+  const entry = loginAttempts.get(email) || { count: 0, lockedUntil: 0 }
+  entry.count++
+  if (entry.count >= MAX_LOGIN_ATTEMPTS) {
+    entry.lockedUntil = Date.now() + LOCKOUT_DURATION_MS
+  }
+  loginAttempts.set(email, entry)
+}
+
+function clearAttempts(email) {
+  loginAttempts.delete(email)
+}
+
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  path: '/',
+}
+
 router.post('/login', validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' })
+    }
+
+    const locked = checkLockout(email)
+    if (locked) {
+      const remaining = Math.ceil((locked.lockedUntil - Date.now()) / 1000 / 60)
+      return res.status(423).json({ error: `Account locked. Try again in ${remaining} minutes.` })
     }
 
     const users = await query('SELECT * FROM users WHERE email = ?', [email])
@@ -25,11 +66,14 @@ router.post('/login', validate(loginSchema), async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password)
 
     if (!validPassword) {
+      recordFailedAttempt(email)
       return res.status(401).json({ error: 'Invalid email or password' })
     }
 
+    clearAttempts(email)
     const token = generateToken(user)
 
+    res.cookie('token', token, COOKIE_OPTIONS)
     res.json({
       token,
       user: {
@@ -73,6 +117,7 @@ router.post('/register', validate(registerSchema), async (req, res) => {
     const newUser = result[0] || { id: result.insertId, email, name, role: 'user' }
     const token = generateToken(newUser)
 
+    res.cookie('token', token, COOKIE_OPTIONS)
     res.status(201).json({
       token,
       user: {
@@ -90,12 +135,18 @@ router.post('/register', validate(registerSchema), async (req, res) => {
   }
 })
 
+const OAUTH_ALLOWED_DOMAINS = (process.env.OAUTH_ALLOWED_DOMAINS || '').split(',').filter(Boolean)
+
 router.post('/oauth', validate(oauthSchema), async (req, res) => {
   try {
     const { email, name } = req.body
 
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' })
+    // Restrict signup to allowed domains (skip check if no domains configured)
+    if (OAUTH_ALLOWED_DOMAINS.length > 0) {
+      const domain = email.split('@')[1]
+      if (!domain || !OAUTH_ALLOWED_DOMAINS.includes(domain)) {
+        return res.status(403).json({ error: 'Email domain not allowed' })
+      }
     }
 
     let users = await query('SELECT * FROM users WHERE email = ?', [email])
@@ -116,6 +167,7 @@ router.post('/oauth', validate(oauthSchema), async (req, res) => {
 
     const token = generateToken(user)
 
+    res.cookie('token', token, COOKIE_OPTIONS)
     res.json({
       token,
       user: {
@@ -131,6 +183,12 @@ router.post('/oauth', validate(oauthSchema), async (req, res) => {
     console.error('OAuth error:', err)
     res.status(500).json({ error: 'Internal server error' })
   }
+})
+
+// POST /api/auth/logout — clear the auth cookie
+router.post('/logout', (_req, res) => {
+  res.clearCookie('token', { path: '/' })
+  res.json({ success: true })
 })
 
 // GET /api/auth/me — returns current user profile from JWT

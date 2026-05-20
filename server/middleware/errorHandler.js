@@ -1,4 +1,4 @@
-export function errorHandler(err, req, res) {
+export function errorHandler(err, req, res, next) {
   console.error(`[ERROR] ${req.method} ${req.originalUrl}:`, err.message)
 
   if (process.env.NODE_ENV !== 'production') {

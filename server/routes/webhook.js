@@ -8,7 +8,17 @@ const router = Router()
 // POST /api/webhook/:gateway/:token
 router.post('/:gateway/:token', async (req, res) => {
   try {
-    const { gateway, token } = req.params
+    const { gateway } = req.params
+
+    // Accept token from URL (backward compat), x-webhook-token header, or request body
+    const token = req.params.token
+      || req.headers['x-webhook-token']
+      || req.body?.webhook_token
+      || req.body?.token
+
+    if (!token) {
+      return res.status(400).json({ error: 'Missing webhook token. Send via URL, x-webhook-token header, or webhook_token in body.' })
+    }
 
     // Look up the branch by webhook token
     const users = await query(

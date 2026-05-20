@@ -8,8 +8,8 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
-
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+import { sendEmail } from '../_shared/brevo.ts'
+import { getPaymentDetail, refreshPaymentOptions } from '../_shared/paymentOptions.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
@@ -18,35 +18,7 @@ const corsHeaders = {
 
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 
-const BANK_OPTIONS = [
-  { value: 'bca', label: 'BCA', accountNumber: '81934138145' },
-  { value: 'bri', label: 'BRI', accountNumber: '0819341381450' },
-  { value: 'bni', label: 'BNI', accountNumber: '0819341381451' },
-]
-
-const EWALLET_OPTIONS = [
-  { value: 'dana', label: 'Dana' },
-  { value: 'shopeepay', label: 'ShopeePay' },
-  { value: 'linkaja', label: 'LinkAja' },
-  { value: 'ovo', label: 'OVO' },
-]
-
-const E_WALLET_PHONE = '081934138145'
-
-function getPaymentDetail(method: string, detail: string, companyName: string) {
-  if (method === 'qr_code') return { label: 'QR Code', detail: 'Scan QR code to pay' }
-  if (method === 'bank_transfer' && detail) {
-    const bank = BANK_OPTIONS.find(b => b.value === detail)
-    return bank ? { label: `Bank ${bank.label}`, detail: `${bank.accountNumber} - ${companyName}` } : null
-  }
-  if (method === 'e_wallet' && detail) {
-    const ew = EWALLET_OPTIONS.find(e => e.value === detail)
-    return ew ? { label: ew.label, detail: `${E_WALLET_PHONE} - ${companyName}` } : null
-  }
-  return null
-}
-
-function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string) {
+function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string, branchId?: string) {
   const tpl = template || {}
   const companyName = tpl.companyName ?? 'Acodera CRM'
   const accent = tpl.accentColor || '#1e40af'
@@ -62,7 +34,7 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
   const totalWithTax = (txn.total_amount || 0) + taxAmount
   const cur = tpl.currencySymbol || '$'
   const customerName = txn.buyer_name || 'Customer'
-  const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName)
+  const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName, branchId)
   const itemName = txn.unique_code || txn.transaction_id || 'Invoice Item'
 
   let paymentInfoHtml = ''
@@ -147,7 +119,7 @@ function getNextRunAt(frequency: string, from = new Date()) {
   return d.toISOString()
 }
 
-async function generateInvoicePdf(inv: any, template: any) {
+async function generateInvoicePdf(inv: any, template: any, branchId?: string) {
   try {
     const DEFAULT_TEMPLATE = {
       companyName: 'Acodera CRM', logoInitial: 'A', logoUrl: '',
@@ -234,7 +206,7 @@ async function generateInvoicePdf(inv: any, template: any) {
     if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
     if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
 
-    const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName)
+    const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName, branchId)
     if (paymentDetail) {
       const payX = width / 2 + 20
       drawText('Payment Details', payX, yPos + 20, fontBold, 9, rgb(0.58, 0.58, 0.62))
@@ -309,7 +281,15 @@ serve(async (req) => {
       )
     }
 
-    const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')
+    // Verify service role key in apikey header (called by pg_cron with the Supabase service key)
+    const apiKey = req.headers.get('apikey')
+    if (apiKey !== supabaseKey) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey)
     const now = new Date().toISOString()
 
@@ -366,7 +346,7 @@ serve(async (req) => {
       }
 
       // Send emails
-      if (isEmail && recipients.length > 0 && BREVO_API_KEY) {
+      if (isEmail && recipients.length > 0) {
         let sent = 0
         let failed = 0
 
@@ -387,6 +367,11 @@ serve(async (req) => {
 
             if (invoices && invoices.length > 0) {
               inv = invoices[0]
+
+              // Load per-branch payment options from DB
+              if (inv.branch) {
+                await refreshPaymentOptions(inv.branch)
+              }
 
               // Fetch invoice template
               let invoiceTemplate: any = null
@@ -410,7 +395,7 @@ serve(async (req) => {
 
               // Generate invoice preview if no custom body, otherwise replace placeholders
               if (!auto.body || auto.body.trim() === '') {
-                htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending')
+                htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
                 subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
               } else {
                 const tpl = invoiceTemplate || {}
@@ -449,29 +434,20 @@ serve(async (req) => {
               }
 
               // Generate PDF attachment
-              pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate)
+              pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
             }
           }
 
           try {
-            const emailResponse = await fetch(BREVO_API_URL, {
-              method: 'POST',
-              headers: {
-                'api-key': BREVO_API_KEY,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                sender: { name: auto.from_name || 'Acodera CRM', email: SENDER_EMAIL },
-                to: [{ email }],
-                subject,
-                htmlContent: htmlBody,
-                ...(pdfBase64 ? { attachment: [{ name: `Invoice-${inv.transaction_id}.pdf`, content: pdfBase64 }] } : {}),
-              }),
+            const result = await sendEmail({
+              to: email,
+              subject,
+              htmlContent: htmlBody,
+              fromName: auto.from_name || 'Acodera CRM',
+              attachments: pdfBase64 ? [{ name: `Invoice-${inv.transaction_id}.pdf`, content: pdfBase64 }] : undefined,
             })
 
-            const emailData = await emailResponse.json()
-
-            if (emailResponse.ok) {
+            if (result.success) {
               await supabase.from('automation_logs').insert([{
                 automation_id: auto.id,
                 contact_email: email,
@@ -480,7 +456,7 @@ serve(async (req) => {
               }])
               sent++
             } else {
-              const errorMsg = emailData.message || JSON.stringify(emailData)
+              const errorMsg = result.error || 'Unknown error'
               await supabase.from('automation_logs').insert([{
                 automation_id: auto.id,
                 contact_email: email,

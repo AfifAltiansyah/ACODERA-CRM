@@ -2,7 +2,6 @@ import apiFetch from '../api/client'
 import { supabase } from '../lib/supabase'
 
 export function storeSession(data) {
-  localStorage.setItem('crm-auth-token', data.token)
   localStorage.setItem('crm-auth-user', JSON.stringify(data.user))
 }
 
@@ -34,34 +33,24 @@ export async function oauthCallback(email, name) {
 }
 
 export async function refreshProfile() {
-  const token = localStorage.getItem('crm-auth-token')
-  if (!token) throw new Error('Not authenticated')
-  const data = await apiFetch('/auth/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const data = await apiFetch('/auth/me')
   localStorage.setItem('crm-auth-user', JSON.stringify(data.user))
   return data.user
 }
 
 export function logout() {
-  localStorage.removeItem('crm-auth-token')
+  apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
   localStorage.removeItem('crm-auth-user')
 }
 
 export function isAuthenticated() {
-  const token = localStorage.getItem('crm-auth-token')
-  const user = localStorage.getItem('crm-auth-user')
-  return !!(token && user)
+  return !!localStorage.getItem('crm-auth-user')
 }
 
 export function getUser() {
   const userStr = localStorage.getItem('crm-auth-user')
   if (!userStr) return null
   try { return JSON.parse(userStr) } catch { return null }
-}
-
-export function getToken() {
-  return localStorage.getItem('crm-auth-token')
 }
 
 export async function sendCode(email, type) {

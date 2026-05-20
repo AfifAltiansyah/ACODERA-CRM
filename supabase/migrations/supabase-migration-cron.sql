@@ -1,24 +1,25 @@
 -- Migration: Enable pg_cron and pg_net, schedule process-scheduled-emails every minute
 -- Run this in Supabase SQL Editor
 --
--- NOTE: You can delete your cron-job.org job — this uses Supabase's built-in scheduler
+-- Uses current_setting('secrets.service_role_key') to avoid hardcoding the key
+-- This reads from Supabase's built-in secret management
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS pg_cron WITH SCHEMA pg_catalog;
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
 -- Schedule the cron job: calls the Edge Function every minute using the service role key
--- Replace YOUR_SERVICE_ROLE_KEY below with your actual service role key from:
---   https://supabase.com/dashboard/project/rthxlprgtfuhntpcdhsh/settings/api
--- The key starts with: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-
+-- The key is resolved at runtime via current_setting, avoiding hardcoded secrets in migrations
 SELECT cron.schedule(
   'process-scheduled-emails',
   '* * * * *',
   $$
   SELECT net.http_post(
     url := 'https://rthxlprgtfuhntpcdhsh.supabase.co/functions/v1/process-scheduled-emails',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aHhscHJndGZ1aG50cGNkaHNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODM0OTM1NSwiZXhwIjoyMDkzOTI1MzU1fQ.4CXw_d9a0XZgtRUnpiyua2OIiFhSxxeaMsP2h10Nxkk"}'::jsonb,
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'apikey', current_setting('secrets.service_role_key')
+    ),
     body := '{}'::jsonb
   );
   $$

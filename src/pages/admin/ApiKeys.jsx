@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { Plus, X, Key, Copy, Check, Trash2, Clock, Upload } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
-const token = () => localStorage.getItem('crm-auth-token')
 
 export function ApiKeysPage() {
   const [keys, setKeys] = useState([])
@@ -17,7 +16,7 @@ export function ApiKeysPage() {
 
   const fetchKeys = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api-keys`, { headers: { Authorization: `Bearer ${token()}` } })
+      const res = await fetch(`${API_BASE}/api-keys`, { credentials: 'include' })
       const data = await res.json()
       if (data.keys) setKeys(data.keys)
     } catch (err) { console.error(err) }
@@ -30,7 +29,8 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(form),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
@@ -46,7 +46,8 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ name: importForm.name, customKey: importForm.customKey.trim(), rateLimit: importForm.rateLimit }),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
@@ -63,7 +64,7 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token()}` },
+        credentials: 'include',
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
       fetchKeys()

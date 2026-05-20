@@ -29,7 +29,7 @@ export function generateToken(user: { id: number; email: string; role: string; b
 }
 
 export function verifyToken(token: string): { id: number; email: string; role: string; branch: string | null; branch_id: string | null } {
-  return jwt.verify(token, getJwtSecret()) as any
+  return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as any
 }
 
 export function getCorsOrigin(): string {
@@ -240,36 +240,11 @@ export async function runSql(sqlText: string): Promise<{ success: boolean; messa
 
 // ─── Email ───────────────────────────────────────────────────────────
 
+import { sendEmail as sharedSendEmail } from '../_shared/brevo.ts'
+
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-  const apiKey = Deno.env.get('BREVO_API_KEY')
-  if (!apiKey) {
-    console.error('BREVO_API_KEY not set')
-    return false
-  }
-  try {
-    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sender: { name: 'Acodera CRM', email: getSenderEmail() },
-        to: [{ email: to }],
-        subject,
-        htmlContent: html,
-      }),
-    })
-    if (!res.ok) {
-      const err = await res.text()
-      console.error('Brevo error:', err)
-      return false
-    }
-    return true
-  } catch (err) {
-    console.error('Email send error:', err)
-    return false
-  }
+  const result = await sharedSendEmail({ to, subject, htmlContent: html })
+  return result.success
 }
 
 export function verificationEmailHtml(code: string): string {

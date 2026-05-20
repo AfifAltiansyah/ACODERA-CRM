@@ -4,7 +4,6 @@ import { Activity, Search, ChevronDown, ChevronUp, Filter } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
-const token = () => localStorage.getItem('crm-auth-token')
 
 export function AuditLogsPage() {
   const { user } = useAuth()
@@ -22,7 +21,7 @@ export function AuditLogsPage() {
       if (actionFilter) params.set('action', actionFilter)
 
       const res = await fetch(`${API_BASE}/audit-logs?${params}`, {
-        headers: { Authorization: `Bearer ${token()}` },
+        credentials: 'include',
       })
       const data = await res.json()
       if (data.logs) setLogs(data.logs)

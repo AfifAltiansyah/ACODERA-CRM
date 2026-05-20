@@ -9,18 +9,14 @@ export function setUnauthorizedHandler(handler) {
 }
 
 async function apiFetch(path, options = {}) {
-  const token = localStorage.getItem('crm-auth-token')
-
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers, credentials: 'include' })
 
   if (res.status === 401) {
-    localStorage.removeItem('crm-auth-token')
     localStorage.removeItem('crm-auth-user')
     onUnauthorized()
     throw new Error('Unauthorized')

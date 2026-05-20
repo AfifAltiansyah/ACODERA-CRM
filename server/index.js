@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
+import cookieParser from 'cookie-parser'
 import authRoutes from './routes/auth.js'
 import contactRoutes from './routes/contacts.js'
 import automationRoutes from './routes/automations.js'
@@ -15,7 +16,8 @@ import invoiceTemplateRoutes from './routes/invoiceTemplate.js'
 import externalRoutes from './routes/external.js'
 import webhookRoutes from './routes/webhook.js'
 import gatewayConfigRoutes from './routes/gatewayConfig.js'
-import { authenticate, requireRole } from './middleware/auth.js'
+import paymentOptionsRoutes from './routes/paymentOptions.js'
+import { authenticate, requireRole, validateTenantAccess } from './middleware/auth.js'
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
 dotenv.config()
@@ -25,18 +27,19 @@ const PORT = process.env.PORT || 3001
 
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',')
-  : ['http://localhost:5173', 'http://localhost:3000']
+  : ['http://localhost:5173', 'http://localhost:3000', 'https://acodera-crm.netlify.app']
 
 // Security headers
 app.use(helmet({
   contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
-  crossOriginEmbedderPolicy: false,
+  crossOriginEmbedderPolicy: { policy: 'credentialless' },
 }))
 
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' ? true : allowedOrigins,
+  origin: allowedOrigins,
   credentials: true,
 }))
+app.use(cookieParser())
 app.use(express.json({ limit: '10mb' }))
 
 // Global rate limiter (per IP)
@@ -72,17 +75,20 @@ app.use('/api/api-keys', authenticate, apiKeyRoutes)
 app.use('/api/audit-logs', authenticate, auditLogRoutes)
 
 // Data routes (with tenant access validation)
-app.use('/api/contacts', authenticate, contactRoutes)
-app.use('/api/automations', authenticate, automationRoutes)
-app.use('/api/flows', authenticate, flowRoutes)
-app.use('/api/reviews', authenticate, reviewRoutes)
-app.use('/api/invoice-template', authenticate, invoiceTemplateRoutes)
+app.use('/api/contacts', authenticate, validateTenantAccess, contactRoutes)
+app.use('/api/automations', authenticate, validateTenantAccess, automationRoutes)
+app.use('/api/flows', authenticate, validateTenantAccess, flowRoutes)
+app.use('/api/reviews', authenticate, validateTenantAccess, reviewRoutes)
+app.use('/api/invoice-template', authenticate, validateTenantAccess, invoiceTemplateRoutes)
 
 // Webhook — no auth (signature verification built into adapter)
 app.use('/api/webhook', webhookRoutes)
 
 // Gateway config — authenticated
 app.use('/api/gateway-config', authenticate, gatewayConfigRoutes)
+
+// Payment options — authenticated, per-tenant
+app.use('/api/payment-options', authenticate, paymentOptionsRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

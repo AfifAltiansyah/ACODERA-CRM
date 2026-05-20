@@ -11,10 +11,12 @@ export const registerSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
 })
 
+const TRUSTED_PROVIDERS = ['google', 'github', 'facebook', 'apple', 'microsoft']
+
 export const oauthSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().max(100).optional(),
-  provider: z.string().optional(),
+  provider: z.enum(TRUSTED_PROVIDERS).optional(),
 })
 
 export const contactSchema = z.object({

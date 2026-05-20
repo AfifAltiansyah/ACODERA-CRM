@@ -55,6 +55,7 @@ router.put('/', authenticate, async (req, res) => {
       paymentGateway,
       webhookToken,
       webhookUrl: `https://your-server.com/api/webhook/${paymentGateway}/${webhookToken}`,
+      webhookHeader: `x-webhook-token: ${webhookToken}`,
     })
   } catch (err) {
     console.error('Save gateway error:', err)

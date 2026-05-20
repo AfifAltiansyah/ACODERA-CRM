@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { Save, Copy, Check, Trash2, Globe } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
-const token = () => localStorage.getItem('crm-auth-token')
 
 const GATEWAYS = [
   { value: 'midtrans', label: 'Midtrans', fields: [
@@ -30,7 +29,7 @@ export function GatewaySettingsPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_BASE}/gateway-config`, { headers: { Authorization: `Bearer ${token()}` } })
+    fetch(`${API_BASE}/gateway-config`, { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         setSelectedGateway(data.paymentGateway || '')
@@ -47,7 +46,8 @@ export function GatewaySettingsPage() {
     try {
       const res = await fetch(`${API_BASE}/gateway-config`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ paymentGateway: selectedGateway, gatewayConfig: config }),
       })
       const data = await res.json()
@@ -64,7 +64,7 @@ export function GatewaySettingsPage() {
   const handleDisable = async () => {
     if (!window.confirm('Disable payment gateway? This will remove your configuration.')) return
     try {
-      await fetch(`${API_BASE}/gateway-config`, { method: 'DELETE', headers: { Authorization: `Bearer ${token()}` } })
+      await fetch(`${API_BASE}/gateway-config`, { method: 'DELETE', credentials: 'include' })
       setSelectedGateway('')
       setConfig({})
       setWebhookToken(null)

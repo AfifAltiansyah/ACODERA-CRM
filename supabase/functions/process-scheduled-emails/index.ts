@@ -5,8 +5,8 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
-
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+import { sendEmail } from '../_shared/brevo.ts'
+import { getPaymentDetail, refreshPaymentOptions } from '../_shared/paymentOptions.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
@@ -15,35 +15,7 @@ const corsHeaders = {
 
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 
-const BANK_OPTIONS = [
-  { value: 'bca', label: 'BCA', accountNumber: '81934138145' },
-  { value: 'bri', label: 'BRI', accountNumber: '0819341381450' },
-  { value: 'bni', label: 'BNI', accountNumber: '0819341381451' },
-]
-
-const EWALLET_OPTIONS = [
-  { value: 'dana', label: 'Dana' },
-  { value: 'shopeepay', label: 'ShopeePay' },
-  { value: 'linkaja', label: 'LinkAja' },
-  { value: 'ovo', label: 'OVO' },
-]
-
-const E_WALLET_PHONE = '081934138145'
-
-function getPaymentDetail(method: string, detail: string, companyName: string) {
-  if (method === 'qr_code') return { label: 'QR Code', detail: 'Scan QR code to pay' }
-  if (method === 'bank_transfer' && detail) {
-    const bank = BANK_OPTIONS.find(b => b.value === detail)
-    return bank ? { label: `Bank ${bank.label}`, detail: `${bank.accountNumber} - ${companyName}` } : null
-  }
-  if (method === 'e_wallet' && detail) {
-    const ew = EWALLET_OPTIONS.find(e => e.value === detail)
-    return ew ? { label: ew.label, detail: `${E_WALLET_PHONE} - ${companyName}` } : null
-  }
-  return null
-}
-
-function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string) {
+function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: string, branchId?: string) {
   const tpl = template || {}
   const companyName = tpl.companyName ?? 'Acodera CRM'
   const accent = tpl.accentColor || '#1e40af'
@@ -59,7 +31,7 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
   const totalWithTax = (txn.total_amount || 0) + taxAmount
   const cur = tpl.currencySymbol || '$'
   const customerName = txn.buyer_name || 'Customer'
-  const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName)
+  const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName, branchId)
   const itemName = txn.unique_code || txn.transaction_id || 'Invoice Item'
 
   let paymentInfoHtml = ''
@@ -140,7 +112,7 @@ function generateInvoiceReminderHtml(txn: any, template: any, statusLabel: strin
 </html>`
 }
 
-async function generateInvoicePdf(inv: any, template: any) {
+async function generateInvoicePdf(inv: any, template: any, branchId?: string) {
   try {
     const DEFAULT_TEMPLATE = {
       companyName: 'Acodera CRM', logoInitial: 'A', logoUrl: '',
@@ -227,31 +199,7 @@ async function generateInvoicePdf(inv: any, template: any) {
     if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
     if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
 
-    const BANK_OPTIONS = [
-      { value: 'bca', label: 'BCA', accountNumber: '81934138145' },
-      { value: 'bri', label: 'BRI', accountNumber: '0819341381450' },
-      { value: 'bni', label: 'BNI', accountNumber: '0819341381451' },
-    ]
-    const EWALLET_OPTIONS = [
-      { value: 'dana', label: 'Dana' },
-      { value: 'shopeepay', label: 'ShopeePay' },
-      { value: 'linkaja', label: 'LinkAja' },
-      { value: 'ovo', label: 'OVO' },
-    ]
-    const E_WALLET_PHONE = '081934138145'
-    function getPaymentDetail(method: string, detail: string, companyName: string) {
-      if (method === 'qr_code') return { label: 'QR Code', detail: 'Scan QR code to pay' }
-      if (method === 'bank_transfer' && detail) {
-        const bank = BANK_OPTIONS.find(b => b.value === detail)
-        return bank ? { label: `Bank ${bank.label}`, detail: `${bank.accountNumber} - ${companyName}` } : null
-      }
-      if (method === 'e_wallet' && detail) {
-        const ew = EWALLET_OPTIONS.find(e => e.value === detail)
-        return ew ? { label: ew.label, detail: `${E_WALLET_PHONE} - ${companyName}` } : null
-      }
-      return null
-    }
-    const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName)
+    const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName, branchId)
     if (paymentDetail) {
       const payX = width / 2 + 20
       drawText('Payment Details', payX, yPos + 20, fontBold, 9, rgb(0.58, 0.58, 0.62))
@@ -327,11 +275,12 @@ serve(async (req) => {
       )
     }
 
-    const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')
-    if (!BREVO_API_KEY) {
+    // Verify service role key in apikey header (called by pg_cron with the Supabase service key)
+    const apiKey = req.headers.get('apikey')
+    if (apiKey !== supabaseKey) {
       return new Response(
-        JSON.stringify({ success: false, error: 'BREVO_API_KEY not configured' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
@@ -388,13 +337,18 @@ serve(async (req) => {
               } catch (e) {
                 console.error('Failed to fetch invoice template:', e)
               }
+
+              // Load per-branch payment options from DB
+              if (inv.branch) {
+                await refreshPaymentOptions(inv.branch)
+              }
             }
 
             // Generate invoice preview HTML if no custom body
             let subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
             let htmlBody: string
             if (!auto.body || auto.body.trim() === '') {
-              htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending')
+              htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
             } else {
               htmlBody = auto.body
               const tpl = invoiceTemplate || {}
@@ -432,36 +386,32 @@ serve(async (req) => {
             }
 
             // Generate PDF attachment
-            const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate)
+            const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
 
             try {
-              const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
-                method: 'POST',
-                headers: { 'api-key': BREVO_API_KEY, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  sender: { name: auto.from_name || 'Acodera CRM', email: SENDER_EMAIL },
-                  to: [{ email: inv.buyer_email }],
-                  subject,
-                  htmlContent: htmlBody,
-                  ...(pdfBase64 ? { attachment: [{ name: `Invoice-${inv.transaction_id}.pdf`, content: pdfBase64 }] } : {}),
-                }),
+              const result = await sendEmail({
+                to: inv.buyer_email,
+                subject,
+                htmlContent: htmlBody,
+                fromName: auto.from_name || 'Acodera CRM',
+                attachments: pdfBase64 ? [{ name: `Invoice-${inv.transaction_id}.pdf`, content: pdfBase64 }] : undefined,
               })
-              const respData = await resp.json()
-              if (resp.ok) {
+
+              if (result.success) {
                 await supabase.from('automation_logs').insert([{
                   automation_id: auto.id, contact_email: inv.buyer_email, subject, status: 'sent',
-                  error: respData.messageId ? `messageId: ${respData.messageId}` : null,
+                  error: result.messageId ? `messageId: ${result.messageId}` : null,
                 }])
               } else {
                 await supabase.from('automation_logs').insert([{
                   automation_id: auto.id, contact_email: inv.buyer_email, subject,
-                  status: 'failed', error: respData.message || JSON.stringify(respData),
+                  status: 'failed', error: result.error,
                 }])
               }
             } catch (err) {
               await supabase.from('automation_logs').insert([{
                 automation_id: auto.id, contact_email: inv.buyer_email, subject,
-                status: 'failed', error: err.message,
+                status: 'failed', error: err instanceof Error ? err.message : String(err),
               }])
             }
           }
@@ -535,34 +485,24 @@ serve(async (req) => {
         continue
       }
 
-      const toList = Array.isArray(email.to_email) ? email.to_email : email.to_email.split(',').map(e => e.trim())
-      const emailPayload = {
-        sender: { name: email.from_name || 'Acodera CRM', email: SENDER_EMAIL },
-        to: toList.map((e: string) => ({ email: e })),
-        subject: email.subject,
-        htmlContent: email.body || `<p>${email.subject}</p>`,
-      }
-
+      let emailAttachments: Array<{ name: string; content: string }> | undefined
       if (email.attachments) {
         try {
           const parsed = typeof email.attachments === 'string' ? JSON.parse(email.attachments) : email.attachments
-          if (Array.isArray(parsed)) emailPayload.attachment = parsed
+          if (Array.isArray(parsed)) emailAttachments = parsed
         } catch { /* ignore */ }
       }
 
       try {
-        const emailResponse = await fetch(BREVO_API_URL, {
-          method: 'POST',
-          headers: {
-            'api-key': BREVO_API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(emailPayload),
+        const result = await sendEmail({
+          to: email.to_email,
+          subject: email.subject,
+          htmlContent: email.body || `<p>${email.subject}</p>`,
+          fromName: email.from_name || 'Acodera CRM',
+          attachments: emailAttachments,
         })
 
-        const emailData = await emailResponse.json()
-
-        if (emailResponse.ok) {
+        if (result.success) {
           await supabase
             .from('scheduled_emails')
             .update({ status: 'sent', sent_at: new Date().toISOString() })
@@ -580,7 +520,7 @@ serve(async (req) => {
           }
           sent++
         } else {
-          const errorMsg = emailData.message || JSON.stringify(emailData)
+          const errorMsg = result.error || 'Unknown error'
           await supabase
             .from('scheduled_emails')
             .update({ status: 'failed', error: errorMsg })

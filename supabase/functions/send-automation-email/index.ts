@@ -3,15 +3,13 @@
 
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+import { sendEmail } from '../_shared/brevo.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET')
 
 serve(async (req: Request) => {
@@ -20,14 +18,40 @@ serve(async (req: Request) => {
   }
 
   try {
-    if (AUTOMATION_SECRET) {
-      const auth = req.headers.get('authorization')
-      if (auth !== `Bearer ${AUTOMATION_SECRET}`) {
+    if (!AUTOMATION_SECRET) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'AUTOMATION_SECRET not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const apiKeyHeader = req.headers.get('apikey')
+    const authHeader = req.headers.get('authorization')
+
+    if (apiKeyHeader === AUTOMATION_SECRET) {
+      // Service-to-service call authorized
+    } else if (authHeader?.startsWith('Bearer ')) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      if (!supabaseUrl || !supabaseKey) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Supabase credentials not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      const supabaseAuth = createClient(supabaseUrl, supabaseKey)
+      const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(authHeader.slice(7))
+      if (userError || !user) {
         return new Response(
           JSON.stringify({ success: false, error: 'Unauthorized' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+    } else {
+      return new Response(
+        JSON.stringify({ success: false, error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     const { to, from_name, subject, body, automation_id, attachments } = await req.json()
@@ -39,46 +63,17 @@ serve(async (req: Request) => {
       )
     }
 
-    const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY')
-    if (!BREVO_API_KEY) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'BREVO_API_KEY is not configured' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const contactEmail = Array.isArray(to) ? to.join(', ') : to
 
-    const toList = Array.isArray(to) ? to : [to]
-    const emailPayload: {
-      sender: { name: string; email: string };
-      to: { email: string }[];
-      subject: string;
-      htmlContent: string;
-      attachment?: any[];
-    } = {
-      sender: { name: from_name || 'Acodera CRM', email: SENDER_EMAIL },
-      to: toList.map((e: string) => ({ email: e })),
+    const result = await sendEmail({
+      to,
       subject,
       htmlContent: body || `<p>${subject}</p>`,
-    }
-
-    if (attachments && Array.isArray(attachments) && attachments.length > 0) {
-      emailPayload.attachment = attachments
-    }
-
-    const emailResponse = await fetch(BREVO_API_URL, {
-      method: 'POST',
-      headers: {
-        'api-key': BREVO_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(emailPayload),
+      fromName: from_name || 'Acodera CRM',
+      attachments: attachments && Array.isArray(attachments) && attachments.length > 0 ? attachments : undefined,
     })
 
-    const emailData = await emailResponse.json()
-
-    if (!emailResponse.ok) {
-      const errorMsg = emailData.message || JSON.stringify(emailData)
-
+    if (!result.success) {
       try {
         if (automation_id) {
           const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -86,18 +81,18 @@ serve(async (req: Request) => {
           if (supabaseUrl && supabaseKey) {
             const supabase = createClient(supabaseUrl, supabaseKey)
             await supabase.from('automation_logs').insert([{
-              automation_id: automation_id,
-              contact_email: Array.isArray(to) ? to.join(', ') : to,
+              automation_id,
+              contact_email: contactEmail,
               subject,
               status: 'failed',
-              error: errorMsg,
+              error: result.error,
             }])
           }
         }
-      } catch (_logErr) { /* ignore */ }
+      } catch { /* ignore */ }
 
       return new Response(
-        JSON.stringify({ success: false, error: errorMsg }),
+        JSON.stringify({ success: false, error: result.error }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -109,17 +104,17 @@ serve(async (req: Request) => {
         if (supabaseUrl && supabaseKey) {
           const supabase = createClient(supabaseUrl, supabaseKey)
           await supabase.from('automation_logs').insert([{
-            automation_id: automation_id,
-            contact_email: Array.isArray(to) ? to.join(', ') : to,
+            automation_id,
+            contact_email: contactEmail,
             subject,
             status: 'sent',
           }])
         }
       }
-    } catch (_logErr) { /* ignore */ }
+    } catch { /* ignore */ }
 
     return new Response(
-      JSON.stringify({ success: true, email_id: emailData.id }),
+      JSON.stringify({ success: true, email_id: result.messageId }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err: any) {

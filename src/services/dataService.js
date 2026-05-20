@@ -659,10 +659,11 @@ export async function getPendingInvoices() {
 export async function getExpiredInvoices() {
   const { data, error } = await filterBranch(
     supabase
-      .from('automation_logs')
+      .from('transactions')
       .select('*')
-      .eq('status', 'expired')
-      .order('sent_at', { ascending: false })
+      .eq('status', 'pending')
+      .lt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
   )
 
   if (error) {
@@ -670,18 +671,14 @@ export async function getExpiredInvoices() {
     return []
   }
 
-  return (data || []).map(log => {
-    let details = { transaction_id: '', amount: 0, buyer: '' }
-    try { details = JSON.parse(log.error || '{}') } catch {}
-    return {
-      id: log.id,
-      transactionId: details.transaction_id || log.subject.replace('Invoice ', '').replace(' expired', ''),
-      amount: Number(details.amount) || 0,
-      buyer: details.buyer || log.contact_email || '',
-      email: log.contact_email || '',
-      expiredAt: log.sent_at || '',
-    }
-  })
+  return (data || []).map(tx => ({
+    id: tx.id,
+    transactionId: tx.transaction_id || '',
+    amount: Number(tx.total_amount) || 0,
+    buyer: tx.buyer_name || '',
+    email: tx.buyer_email || '',
+    expiredAt: tx.expires_at || '',
+  }))
 }
 
 export async function getTicketInvoices() {

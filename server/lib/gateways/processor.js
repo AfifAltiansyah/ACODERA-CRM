@@ -42,7 +42,7 @@ export async function processPayment(webhookData) {
   if (newStatus === 'paid') {
     await query(
       'UPDATE transactions SET status = ?, purchased_at = NOW(), payment_method = ?, payment_detail = ? WHERE transaction_id = ?',
-      [newStatus, gateway, transactionId, transactionId]
+      [newStatus, gateway, 'Paid via ' + gateway, transactionId]
     )
   } else if (newStatus === 'cancelled') {
     // Reset to available (same as deleteInvoice logic)
@@ -83,7 +83,7 @@ export async function processPayment(webhookData) {
       }
 
       const headers = { 'Content-Type': 'application/json' }
-      if (AUTOMATION_SECRET) headers['Authorization'] = `Bearer ${AUTOMATION_SECRET}`
+      if (AUTOMATION_SECRET) headers['apikey'] = AUTOMATION_SECRET
       await fetch(`${EVENT_BASE}?event=invoice.paid`, {
         method: 'POST',
         headers,

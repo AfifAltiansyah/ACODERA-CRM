@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import { Plus, X, Users, Shield, Edit2, Trash2 } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
-const token = () => localStorage.getItem('crm-auth-token')
 
 export function UserManagementPage() {
   const [users, setUsers] = useState([])
@@ -14,7 +13,7 @@ export function UserManagementPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_BASE}/users`, { headers: { Authorization: `Bearer ${token()}` } })
+      const res = await fetch(`${API_BASE}/users`, { credentials: 'include' })
       const data = await res.json()
       if (data.users) setUsers(data.users)
     } catch (err) { console.error(err) }
@@ -31,7 +30,8 @@ export function UserManagementPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(body),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
@@ -45,7 +45,7 @@ export function UserManagementPage() {
     try {
       const res = await fetch(`${API_BASE}/users/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token()}` },
+        credentials: 'include',
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
       fetchUsers()
