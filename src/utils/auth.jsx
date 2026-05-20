@@ -3,6 +3,12 @@ import { supabase } from '../lib/supabase'
 
 export function storeSession(data) {
   localStorage.setItem('crm-auth-user', JSON.stringify(data.user))
+  if (data.token) localStorage.setItem('crm-auth-token', data.token)
+}
+
+function clearSession() {
+  localStorage.removeItem('crm-auth-user')
+  localStorage.removeItem('crm-auth-token')
 }
 
 export async function login(email, password) {
@@ -34,13 +40,13 @@ export async function oauthCallback(email, name) {
 
 export async function refreshProfile() {
   const data = await apiFetch('/auth/me')
-  localStorage.setItem('crm-auth-user', JSON.stringify(data.user))
+  storeSession(data)
   return data.user
 }
 
 export function logout() {
   apiFetch('/auth/logout', { method: 'POST' }).catch(() => {})
-  localStorage.removeItem('crm-auth-user')
+  clearSession()
 }
 
 export function isAuthenticated() {
