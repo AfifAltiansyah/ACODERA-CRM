@@ -1,9 +1,7 @@
-// Supabase Edge Function: send-automation-email
-// Deploy with: supabase functions deploy send-automation-email
-
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendEmail } from '../_shared/brevo.ts'
+import { logEmailResult } from '../_shared/invoice.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
@@ -12,6 +10,13 @@ const corsHeaders = {
 
 const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET')
 
+function corsResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -19,10 +24,7 @@ serve(async (req: Request) => {
 
   try {
     if (!AUTOMATION_SECRET) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'AUTOMATION_SECRET not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return corsResponse({ success: false, error: 'AUTOMATION_SECRET not configured' }, 500)
     }
 
     const apiKeyHeader = req.headers.get('apikey')
@@ -34,33 +36,21 @@ serve(async (req: Request) => {
       const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
       if (!supabaseUrl || !supabaseKey) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Supabase credentials not configured' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return corsResponse({ success: false, error: 'Supabase credentials not configured' }, 500)
       }
       const supabaseAuth = createClient(supabaseUrl, supabaseKey)
       const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(authHeader.slice(7))
       if (userError || !user) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Unauthorized' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
+        return corsResponse({ success: false, error: 'Unauthorized' }, 401)
       }
     } else {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return corsResponse({ success: false, error: 'Unauthorized' }, 401)
     }
 
     const { to, from_name, subject, body, automation_id, attachments } = await req.json()
 
     if (!to || !subject) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Missing required fields: to, subject' }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      return corsResponse({ success: false, error: 'Missing required fields: to, subject' })
     }
 
     const contactEmail = Array.isArray(to) ? to.join(', ') : to
@@ -74,53 +64,24 @@ serve(async (req: Request) => {
     })
 
     if (!result.success) {
-      try {
-        if (automation_id) {
-          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-          const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-          if (supabaseUrl && supabaseKey) {
-            const supabase = createClient(supabaseUrl, supabaseKey)
-            await supabase.from('automation_logs').insert([{
-              automation_id,
-              contact_email: contactEmail,
-              subject,
-              status: 'failed',
-              error: result.error,
-            }])
-          }
-        }
-      } catch { /* ignore */ }
-
-      return new Response(
-        JSON.stringify({ success: false, error: result.error }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      if (automation_id && supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        await logEmailResult(supabase, automation_id, contactEmail, subject, 'failed', result.error).catch(() => {})
+      }
+      return corsResponse({ success: false, error: result.error })
     }
 
-    try {
-      if (automation_id) {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey)
-          await supabase.from('automation_logs').insert([{
-            automation_id,
-            contact_email: contactEmail,
-            subject,
-            status: 'sent',
-          }])
-        }
-      }
-    } catch { /* ignore */ }
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    if (automation_id && supabaseUrl && supabaseKey) {
+      const supabase = createClient(supabaseUrl, supabaseKey)
+      await logEmailResult(supabase, automation_id, contactEmail, subject, 'sent').catch(() => {})
+    }
 
-    return new Response(
-      JSON.stringify({ success: true, email_id: result.messageId }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return corsResponse({ success: true, email_id: result.messageId })
   } catch (err: any) {
-    return new Response(
-      JSON.stringify({ success: false, error: err.message }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return corsResponse({ success: false, error: err.message })
   }
 })

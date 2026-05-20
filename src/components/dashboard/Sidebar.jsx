@@ -22,11 +22,11 @@ const mainNavItems = [
   { label: 'Trash', icon: Trash2, path: '/dashboard/trash' },
   { label: 'API Keys', icon: Key, path: '/dashboard/api-keys' },
   { label: 'Payment Gateway', icon: Receipt, path: '/dashboard/admin/gateway' },
+  { label: 'Payment Options', icon: Banknote, path: '/dashboard/admin/payment-options' },
 ]
 
 const adminNavItems = [
   { label: 'Users', icon: Users, path: '/dashboard/admin/users' },
-  { label: 'Payment Options', icon: Banknote, path: '/dashboard/admin/payment-options' },
   { label: 'API Keys', icon: Key, path: '/dashboard/admin/api-keys' },
   { label: 'Audit Logs', icon: Activity, path: '/dashboard/admin/audit-logs' },
 ]
