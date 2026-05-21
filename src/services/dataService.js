@@ -1,7 +1,5 @@
 import { supabase } from '../lib/supabase'
 import { getUser } from '../utils/auth'
-import { generateInvoicePdfBase64 } from '../lib/generateInvoicePdf'
-import { loadTemplate } from '../pages/InvoiceTemplate'
 
 function currentBranchId() {
   const user = getUser()
@@ -742,17 +740,6 @@ export async function getTicketInstances(ticketId) {
   return data.map(formatTransaction)
 }
 
-async function makeInvoiceAttachment(invoice) {
-  try {
-    const template = await loadTemplate()
-    const base64 = await generateInvoicePdfBase64(invoice, template)
-    return { name: 'invoice.pdf', content: base64 }
-  } catch (err) {
-    console.error('makeInvoiceAttachment error:', err)
-    return null
-  }
-}
-
 export async function addInvoice(invoice) {
   if (invoice.ticketId) {
     const qty = Number(invoice.quantity) || 1
@@ -806,7 +793,6 @@ export async function addInvoice(invoice) {
       paymentMethod: invoice.paymentMethod || '',
       paymentDetail: invoice.paymentDetail || '',
     }
-    const invoicePdf = await makeInvoiceAttachment(invoiceForPdf)
 
     triggerAutomationEvent('ticket.purchased', {
       contact_email: invoice.customerEmail,
@@ -832,10 +818,15 @@ export async function addInvoice(invoice) {
           itemName: invoice.itemName || '',
           quantity: String(qty),
           pricePerUnit: String(Number(invoice.pricePerUnit)),
+          totalAmount: String(Number(invoice.pricePerUnit) * qty),
           paymentMethod: invoice.paymentMethod || '',
           paymentDetail: invoice.paymentDetail || '',
+          transaction_id: transactionId,
+          status: 'paid',
+          purchased_at: now.toISOString(),
+          branch: currentBranchId(),
         },
-      }, invoicePdf)
+      })
       insertNotification({
         type: 'invoice', title: 'Invoice paid',
         message: `${transactionId} — Rp${(Number(invoice.pricePerUnit) * qty).toLocaleString()}`,
@@ -872,23 +863,7 @@ export async function addInvoice(invoice) {
 
   if (error) throw error
 
-  const invoiceForPdf = {
-    transactionId: invoice.transactionId,
-    totalAmount: Number(invoice.totalAmount),
-    customerName: invoice.customerName || '',
-    customerEmail: invoice.customerEmail || '',
-    customerPhone: invoice.customerPhone || '',
-    pricePerUnit: Number(invoice.pricePerUnit),
-    quantity: Number(invoice.quantity) || 1,
-    itemCode: invoice.itemCode || '',
-    itemName: invoice.itemName || '',
-    dateTime: new Date().toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }),
-    status: invoice.status || 'pending',
-    paymentMethod: invoice.paymentMethod || '',
-    paymentDetail: invoice.paymentDetail || '',
-  }
-  const invoicePdf = await makeInvoiceAttachment(invoiceForPdf)
-
+  const now = new Date()
   triggerAutomationEvent('invoice.created', {
     contact_email: invoice.customerEmail,
     contact_name: invoice.customerName,
@@ -899,12 +874,19 @@ export async function addInvoice(invoice) {
       buyer_name: invoice.customerName,
       buyer_phone: invoice.customerPhone || '',
       itemName: invoice.itemName || invoice.itemCode || '',
+      itemCode: invoice.itemCode || '',
       quantity: String(Number(invoice.quantity) || 1),
       pricePerUnit: String(Number(invoice.pricePerUnit)),
+      totalAmount: String(Number(invoice.totalAmount)),
       paymentMethod: invoice.paymentMethod || '',
       paymentDetail: invoice.paymentDetail || '',
+      transaction_id: invoice.transactionId,
+      status: invoice.status || 'pending',
+      purchased_at: now.toISOString(),
+      created_at: now.toISOString(),
+      branch: currentBranchId(),
     },
-  }, invoicePdf)
+  })
   insertNotification({
     type: 'invoice', title: 'Invoice created',
     message: `${invoice.transactionId} — Rp${(Number(invoice.totalAmount) || 0).toLocaleString()}`,
@@ -922,12 +904,19 @@ export async function addInvoice(invoice) {
         buyer_name: invoice.customerName,
         buyer_phone: invoice.customerPhone || '',
         itemName: invoice.itemName || invoice.itemCode || '',
+        itemCode: invoice.itemCode || '',
         quantity: String(Number(invoice.quantity) || 1),
         pricePerUnit: String(Number(invoice.pricePerUnit)),
+        totalAmount: String(Number(invoice.totalAmount)),
         paymentMethod: invoice.paymentMethod || '',
         paymentDetail: invoice.paymentDetail || '',
+        transaction_id: invoice.transactionId,
+        status: 'paid',
+        purchased_at: now.toISOString(),
+        created_at: now.toISOString(),
+        branch: currentBranchId(),
       },
-    }, invoicePdf)
+    })
   }
   return formatTransaction(data)
 }
@@ -1138,13 +1127,11 @@ export async function refundTicketInstance(instanceId) {
   return formatTransaction(data)
 }
 
-export async function triggerAutomationEvent(event, data = {}, attachment) {
+export async function triggerAutomationEvent(event, data = {}) {
   try {
-    const payload = attachment ? { ...data, attachment } : data
-
     const { data: result, error } = await supabase.functions.invoke('trigger-automation', {
       params: { event },
-      body: payload,
+      body: data,
     })
 
     if (error) {
@@ -1190,22 +1177,6 @@ export async function updateTransactionStatus(id, newStatus) {
   if (error) throw error
 
   if (newStatus === 'paid' && oldStatus !== 'paid') {
-    const invoiceForPdf = {
-      transactionId: current.transaction_id,
-      totalAmount: Number(current.total_amount),
-      customerName: current.buyer_name || '',
-      customerEmail: current.buyer_email || '',
-      customerPhone: current.buyer_phone || '',
-      pricePerUnit: Number(current.price_per_unit),
-      quantity: current.quantity || 1,
-      itemCode: current.unique_code || '',
-      itemName: current.unique_code || '',
-      dateTime: current.purchased_at ? new Date(current.purchased_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '',
-      status: 'paid',
-      paymentMethod: current.payment_method || '',
-      paymentDetail: current.payment_detail || '',
-    }
-    const invoicePdf = await makeInvoiceAttachment(invoiceForPdf)
     triggerAutomationEvent('invoice.paid', {
       contact_email: current.buyer_email,
       contact_name: current.buyer_name,
@@ -1215,14 +1186,21 @@ export async function updateTransactionStatus(id, newStatus) {
         buyer_email: current.buyer_email,
         buyer_name: current.buyer_name,
         buyer_phone: current.buyer_phone || '',
-        itemName: current.unique_code || '',
+        itemName: current.item_name || current.unique_code || '',
+        itemCode: current.unique_code || '',
         quantity: String(current.quantity || 1),
         pricePerUnit: String(Number(current.price_per_unit)),
+        totalAmount: String(Number(current.total_amount)),
         paymentMethod: current.payment_method || '',
         paymentDetail: current.payment_detail || '',
         ticket: current.unique_code,
+        transaction_id: current.transaction_id,
+        status: 'paid',
+        purchased_at: current.purchased_at,
+        created_at: current.created_at,
+        branch: current.branch,
       },
-    }, invoicePdf)
+    })
     insertNotification({
       type: 'invoice', title: 'Invoice paid',
       message: `${current.transaction_id} — Rp${(Number(current.total_amount) || 0).toLocaleString()}`,

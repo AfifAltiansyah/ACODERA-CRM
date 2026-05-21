@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { sendEmail } from '../_shared/brevo.ts'
 import { refreshPaymentOptions } from '../_shared/paymentOptions.ts'
 import {
+  generateInvoiceHtml,
   generateInvoiceReminderHtml,
   generateInvoicePdf,
   replaceTemplateVars,
@@ -253,7 +254,112 @@ serve(async (req) => {
       }
     }
 
-    // ── 3. Expire pending invoices ──────────────────────────────────────
+    // ── 3. Invoice paid/created automations (dedup-checked) ───────────────
+    const { data: invoiceAutos } = await supabase
+      .from('automations')
+      .select('*')
+      .in('trigger_event', ['invoice.paid', 'invoice.created'])
+      .eq('status', 'active')
+      .neq('schedule_type', 'immediate')
+      .not('next_run_at', 'is', null)
+      .lte('next_run_at', now)
+
+    if (invoiceAutos && invoiceAutos.length > 0) {
+      const { data: recentInvoices } = await supabase
+        .from('transactions')
+        .select('*')
+        .in('status', ['paid', 'pending'])
+        .order('created_at', { ascending: false })
+        .limit(50)
+
+      if (recentInvoices && recentInvoices.length > 0) {
+        const seen = new Set<string>()
+        for (const inv of recentInvoices) {
+          if (!inv.buyer_email || seen.has(inv.buyer_email)) continue
+          seen.add(inv.buyer_email)
+
+          for (const auto of invoiceAutos) {
+            const { data: recent } = await supabase
+              .from('automation_logs')
+              .select('id')
+              .eq('automation_id', auto.id)
+              .eq('contact_email', inv.buyer_email)
+              .eq('status', 'sent')
+              .gte('sent_at', new Date(Date.now() - 86400000).toISOString())
+              .limit(1)
+            if (recent && recent.length > 0) continue
+
+            let invoiceTemplate: any = null
+            if (inv.branch) {
+              await refreshPaymentOptions(inv.branch)
+              invoiceTemplate = await fetchInvoiceTemplate(supabase, inv.branch)
+            }
+
+            const eventLabel = auto.trigger_event === 'invoice.paid' ? 'Paid' : 'Pending'
+            let subject = auto.subject || (auto.trigger_event === 'invoice.paid'
+              ? `Payment Received - ${inv.transaction_id}`
+              : `Invoice Created - ${inv.transaction_id}`)
+            let htmlBody: string
+            if (!auto.body || auto.body.trim() === '') {
+              htmlBody = generateInvoiceHtml(inv, invoiceTemplate, eventLabel, inv.branch)
+            } else {
+              const replaced = replaceTemplateVars(auto.body, subject, inv, invoiceTemplate, {
+                contactName: inv.buyer_name,
+                contactEmail: inv.buyer_email,
+                event: auto.trigger_event,
+                senderEmail: SENDER_EMAIL,
+              })
+              htmlBody = replaced.htmlBody
+              subject = replaced.subject
+            }
+
+            const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
+
+            try {
+              const result = await sendEmail({
+                to: inv.buyer_email,
+                subject,
+                htmlContent: htmlBody,
+                fromName: auto.from_name || 'Acodera CRM',
+                attachments: pdfBase64 ? [{ name: `Invoice-${inv.transaction_id}.pdf`, content: pdfBase64 }] : undefined,
+              })
+
+              if (result.success) {
+                await logEmailResult(supabase, auto.id, inv.buyer_email, subject, 'sent')
+                totalSent++
+              } else {
+                await logEmailResult(supabase, auto.id, inv.buyer_email, subject, 'failed', result.error)
+                totalFailed++
+              }
+            } catch (err) {
+              await logEmailResult(supabase, auto.id, inv.buyer_email, subject, 'failed',
+                err instanceof Error ? err.message : String(err))
+              totalFailed++
+            }
+
+            totalProcessed++
+          }
+        }
+      }
+
+      // Update next_run_at for processed automations
+      for (const auto of invoiceAutos) {
+        if (auto.schedule_type === 'recurring') {
+          const nextRun = getNextRunAt(auto.schedule_frequency, new Date())
+          await supabase
+            .from('automations')
+            .update({ last_run_at: now, next_run_at: nextRun })
+            .eq('id', auto.id)
+        } else {
+          await supabase
+            .from('automations')
+            .update({ status: 'completed', last_run_at: now })
+            .eq('id', auto.id)
+        }
+      }
+    }
+
+    // ── 4. Expire pending invoices ──────────────────────────────────────
     const { data: expired } = await supabase
       .from('transactions')
       .select('id, transaction_id, unique_code, total_amount, buyer_name, buyer_email, branch')
@@ -283,7 +389,7 @@ serve(async (req) => {
       }
     }
 
-    // ── 4. Process scheduled_emails ─────────────────────────────────────
+    // ── 5. Process scheduled_emails ─────────────────────────────────────
     const { data: pendingEmails, error: scheduleError } = await supabase
       .from('scheduled_emails')
       .select('*')

@@ -153,17 +153,36 @@ serve(async (req) => {
       let txnData: any = null
       let serverPdfBase64: string | null = null
 
-      if (isInvoiceEvent && extraData.invoice_id) {
+      if (isInvoiceEvent) {
         try {
-          const { data: txns } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('transaction_id', String(extraData.invoice_id))
-            .limit(1)
+          let invoiceId = extraData.invoice_id as string | undefined
 
-          if (txns && txns.length > 0) {
-            txnData = txns[0]
+          if (invoiceId) {
+            const { data: txns } = await supabase
+              .from('transactions')
+              .select('*')
+              .eq('transaction_id', String(invoiceId))
+              .limit(1)
 
+            if (txns && txns.length > 0) {
+              txnData = txns[0]
+            }
+          }
+
+          if (!txnData && extraData.buyer_email) {
+            const { data: txns } = await supabase
+              .from('transactions')
+              .select('*')
+              .eq('buyer_email', String(extraData.buyer_email))
+              .order('created_at', { ascending: false })
+              .limit(1)
+
+            if (txns && txns.length > 0) {
+              txnData = txns[0]
+            }
+          }
+
+          if (txnData) {
             if (txnData.branch) {
               await refreshPaymentOptions(txnData.branch)
             }
@@ -172,7 +191,7 @@ serve(async (req) => {
               invoiceTemplate = await fetchInvoiceTemplate(supabase, txnData.branch)
             }
 
-            const statusLabel = event === 'invoice.paid' ? 'Paid' : 'Pending'
+            const statusLabel = event === 'invoice.paid' ? 'Paid' : event === 'invoice.overdue' ? 'Overdue' : 'Pending'
 
             if (!auto.body || auto.body.trim() === '') {
               if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
@@ -182,13 +201,22 @@ serve(async (req) => {
               }
               subject = auto.subject || (event === 'invoice.paid'
                 ? `Payment Received - ${txnData.transaction_id}`
-                : `Payment Reminder - ${txnData.transaction_id}`)
+                : event === 'invoice.overdue'
+                  ? `Payment Overdue - ${txnData.transaction_id}`
+                  : `Invoice Created - ${txnData.transaction_id}`)
             }
 
             serverPdfBase64 = await generateInvoicePdf(txnData, invoiceTemplate, txnData.branch)
+            if (serverPdfBase64) {
+              console.log('[trigger-automation] PDF generated server-side for', txnData.transaction_id, 'length:', serverPdfBase64.length)
+            } else {
+              console.error('[trigger-automation] PDF generation returned null for', txnData.transaction_id)
+            }
+          } else {
+            console.warn('[trigger-automation] No transaction found for invoice event', event, 'invoice_id:', extraData.invoice_id)
           }
         } catch (err) {
-          console.error('Failed to fetch invoice data:', err)
+          console.error('[trigger-automation] Failed to fetch invoice data:', err)
         }
       }
 
@@ -206,10 +234,18 @@ serve(async (req) => {
         let failed = 0
         for (const email of recipients) {
           try {
-            const attachmentContent = attachment?.content || pdfAttachment?.content || serverPdfBase64
+            // Prefer server-generated PDF, then frontend attachment, then pdf_attachment
+            const attachmentContent = serverPdfBase64 || attachment?.content || pdfAttachment?.content
+            const invoiceFileName = txnData?.transaction_id || extraData.invoice_id || attachment?.name?.replace('.pdf', '') || 'document'
             const emailAttachments = attachmentContent
-              ? [{ name: `Invoice-${(txnData?.transaction_id || extraData.invoice_id || 'document')}.pdf`, content: attachmentContent }]
+              ? [{ name: `Invoice-${invoiceFileName}.pdf`, content: attachmentContent }]
               : undefined
+
+            if (emailAttachments) {
+              console.log('[trigger-automation] Attaching PDF:', emailAttachments[0].name, 'size:', emailAttachments[0].content.length)
+            } else {
+              console.warn('[trigger-automation] No PDF attachment available for', email)
+            }
 
             const result = await sendEmail({ to: email, subject, htmlContent: htmlBody, fromName, attachments: emailAttachments })
 
