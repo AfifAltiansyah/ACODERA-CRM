@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { corsHeaders, jsonResponse, verifyToken, runSql } from './lib.ts'
 import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal } from './routes.ts'
 
