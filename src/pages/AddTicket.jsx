@@ -41,8 +41,13 @@ export function AddTicketPage() {
       const base64 = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onload = (ev) => {
-          const b64 = ev.target?.result?.toString().split(',')[1]
-          if (b64) resolve(b64) else reject(new Error('Failed to read file'))
+          const result = (ev.target?.result || '').toString()
+          const b64 = result.split(',')[1] || ''
+          if (b64) {
+            resolve(b64)
+          } else {
+            reject(new Error('Failed to read file'))
+          }
         }
         reader.onerror = () => reject(new Error('Failed to read file'))
         reader.readAsDataURL(file)
