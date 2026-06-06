@@ -815,6 +815,39 @@ export async function handleExternal(req: Request, method: string, path: string)
   try {
     if (method === 'GET' && !id) {
       const filter = tenantWhere()
+
+      if (entity === 'tickets') {
+        let ticketsQ = supabase.from('tickets').select('*').order('created_at', { ascending: false })
+        if (filter) ticketsQ = ticketsQ.eq(filter.column, filter.value)
+        const { data: tickets } = await ticketsQ
+        if (!tickets || tickets.length === 0) return respond({ data: [] })
+
+        const ticketIds = tickets.map((t: any) => t.id)
+        const { data: soldRows } = await supabase
+          .from('transactions')
+          .select('ticket_id, quantity')
+          .in('ticket_id', ticketIds)
+          .neq('status', 'cancelled')
+          .not('status', 'eq', 'available')
+
+        const soldByTicket: Record<string, number> = {}
+        if (soldRows) {
+          for (const r of soldRows) {
+            const key = String(r.ticket_id)
+            soldByTicket[key] = (soldByTicket[key] || 0) + (Number(r.quantity) || 1)
+          }
+        }
+
+        const enriched = tickets.map((t: any) => ({
+          ...t,
+          quantity: Number(t.quantity) || 0,
+          remaining: (Number(t.quantity) || 0) - (soldByTicket[String(t.id)] || 0),
+        }))
+
+        await audit(`${method.toLowerCase()}.list`)
+        return respond({ data: enriched })
+      }
+
       let q = supabase.from(entity).select('*').order('created_at', { ascending: false })
       if (filter) q = q.eq(filter.column, filter.value)
       const { data } = await q
@@ -839,6 +872,33 @@ export async function handleExternal(req: Request, method: string, path: string)
           insertData.branch_id = user!.branch_id
         } else {
           insertData.branch = user!.branch_id
+        }
+      }
+
+      if (entity === 'transactions' && insertData.ticket_id) {
+        const requestedQty = Number(insertData.quantity) || 1
+        const ticketId = insertData.ticket_id as string
+
+        const { data: ticket } = await supabase
+          .from('tickets')
+          .select('quantity')
+          .eq('id', ticketId)
+          .single()
+
+        if (!ticket) return respond({ error: 'Ticket not found' }, 404)
+
+        const { data: soldRows } = await supabase
+          .from('transactions')
+          .select('quantity')
+          .eq('ticket_id', ticketId)
+          .neq('status', 'cancelled')
+          .not('status', 'eq', 'available')
+
+        const sold = (soldRows || []).reduce((sum: number, r: any) => sum + (Number(r.quantity) || 1), 0)
+        const remaining = (Number(ticket.quantity) || 0) - sold
+
+        if (requestedQty > remaining) {
+          return respond({ error: `Only ${remaining} tickets available` }, 400)
         }
       }
 
