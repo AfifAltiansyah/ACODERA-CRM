@@ -1,7 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db.js'
 import { authenticate } from '../middleware/auth.js'
-import crypto from 'crypto'
 
 const router = Router()
 
@@ -11,6 +10,17 @@ router.use(authenticate)
 // GET /api/payment-options — list payment options for the user's branch
 router.get('/', async (req, res) => {
   try {
+    const isOwner = req.user.role === 'owner'
+
+    if (isOwner) {
+      const options = await query('payment_options', q =>
+        q.select('*')
+          .order('type')
+          .order('value')
+      )
+      return res.json({ options })
+    }
+
     const branchId = req.user.branch_id || req.user.branch
     if (!branchId) {
       return res.json({ options: [] })
@@ -33,14 +43,16 @@ router.get('/', async (req, res) => {
 // POST /api/payment-options — create a new option
 router.post('/', async (req, res) => {
   try {
-    const { type, value, label, account_number, phone } = req.body
+    const { type, value, label, account_number, phone, branch_id } = req.body
     if (!type || !value || !label) {
       return res.status(400).json({ error: 'type, value, and label are required' })
     }
 
-    const branchId = req.user.branch_id || req.user.branch
+    const isOwner = req.user.role === 'owner'
+    const branchId = isOwner ? branch_id : (req.user.branch_id || req.user.branch)
+
     if (!branchId) {
-      return res.status(400).json({ error: 'No branch assigned' })
+      return res.status(400).json({ error: isOwner ? 'branch_id is required for owners' : 'No branch assigned' })
     }
 
     if (!['bank', 'e_wallet', 'qr_code'].includes(type)) {
@@ -70,6 +82,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     const { type, value, label, account_number, phone, is_active } = req.body
+    const isOwner = req.user.role === 'owner'
     const branchId = req.user.branch_id || req.user.branch
 
     const updateData = {}
@@ -80,12 +93,13 @@ router.put('/:id', async (req, res) => {
     if (phone !== undefined) updateData.phone = phone || null
     if (is_active !== undefined) updateData.is_active = is_active
 
-    const result = await query('payment_options', q =>
-      q.update(updateData)
-        .eq('id', id)
-        .eq('branch_id', branchId)
-        .select()
-    )
+    let q = query('payment_options', q => {
+      let builder = q.update(updateData).eq('id', id)
+      if (!isOwner && branchId) builder = builder.eq('branch_id', branchId)
+      return builder.select()
+    })
+
+    const result = await q
 
     if (!result || result.length === 0) {
       return res.status(404).json({ error: 'Option not found' })
@@ -102,13 +116,14 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
+    const isOwner = req.user.role === 'owner'
     const branchId = req.user.branch_id || req.user.branch
 
-    const result = await query('payment_options', q =>
-      q.delete()
-        .eq('id', id)
-        .eq('branch_id', branchId)
-    )
+    await query('payment_options', q => {
+      let builder = q.delete().eq('id', id)
+      if (!isOwner && branchId) builder = builder.eq('branch_id', branchId)
+      return builder
+    })
 
     res.json({ success: true })
   } catch (err) {

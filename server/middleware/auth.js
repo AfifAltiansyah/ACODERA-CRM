@@ -9,7 +9,7 @@ if (!JWT_SECRET) {
 
 export function generateToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, branch: user.branch || null },
+    { id: user.id, email: user.email, role: user.role, branch: user.branch || null, branch_id: user.branch_id || null },
     JWT_SECRET,
     { expiresIn: '24h' }
   )
