@@ -56,77 +56,91 @@ export function generateInvoiceHtml(
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Invoice ${txn.transaction_id || ''}</title></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;">
-<div style="max-width:794px;margin:0 auto;background:#fff;padding:32px 40px;">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid ${accent};margin-bottom:24px;">
-    <div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        ${logoSrc
-          ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:120px;max-height:60px;object-fit:contain;" />`
-          : (logoInitial ? `<div style="width:32px;height:32px;border-radius:6px;background:${accent};display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:14px;">${logoInitial}</span></div>` : '')
-        }
-        <span style="font-size:16px;font-weight:700;color:${accent};">${companyName}</span>
-      </div>
-      ${address ? `<p style="margin:0;font-size:11px;color:#64748b;">${address}</p>` : ''}
-      <p style="margin:0;font-size:11px;color:#64748b;">${email}${phone ? ' | ' + phone : ''}</p>
-    </div>
-    <div style="text-align:right;">
-      <p style="margin:0;font-size:16px;font-weight:700;color:${accent};">INVOICE</p>
-      <p style="margin:2px 0 0;font-size:11px;color:#64748b;">${txn.transaction_id || ''}</p>
-      <p style="margin:2px 0 0;font-size:11px;color:#64748b;">Date: ${txn.purchased_at ? new Date(txn.purchased_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</p>
-      <span style="display:inline-block;margin-top:4px;padding:2px 12px;border-radius:9999px;font-size:10px;font-weight:600;color:${statusColor};background:${statusColor}15;border:1px solid ${statusColor}30;">${statusLabel}</span>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#fff;padding:24px 32px;">
 
-  <div style="display:flex;justify-content:space-between;margin-bottom:24px;">
-    <div>
-      <p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Bill To</p>
-      <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;">${customerName}</p>
-      ${customerEmail ? `<p style="margin:2px 0 0;font-size:13px;color:#64748b;">${customerEmail}</p>` : ''}
-      ${customerPhone ? `<p style="margin:2px 0 0;font-size:13px;color:#64748b;">${customerPhone}</p>` : ''}
-    </div>
-    ${paymentInfoHtml}
-  </div>
-
-  <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-    <thead>
-      <tr style="background:#f1f5f9;">
-        <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:1px solid #e2e8f0;">Item</th>
-        <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:1px solid #e2e8f0;">Qty</th>
-        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:1px solid #e2e8f0;">Price/Unit</th>
-        <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${itemName}</td>
-        <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${txn.quantity || 1}</td>
-        <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.price_per_unit || txn.total_amount || 0).toLocaleString()}</td>
-        <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
-      </tr>
-    </tbody>
+  <table style="width:100%;border-collapse:collapse;border-bottom:2px solid ${accent};padding-bottom:16px;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="vertical-align:top;padding-bottom:16px;">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            ${logoSrc ? `<td style="vertical-align:middle;padding-right:8px;"><img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:120px;max-height:48px;border:0;" /></td>` : ''}
+            <td style="vertical-align:middle;">
+              ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:28px;height:28px;line-height:28px;border-radius:4px;background:${accent};color:#fff;font-weight:bold;font-size:14px;text-align:center;margin-right:8px;">${logoInitial}</span>` : ''}
+              <span style="font-size:16px;font-weight:700;color:${accent};">${companyName}</span>
+            </td>
+          </tr>
+        </table>
+        ${address ? `<p style="margin:4px 0 0;font-size:11px;color:#64748b;">${address}</p>` : ''}
+        <p style="margin:2px 0 0;font-size:11px;color:#64748b;">${email}${phone ? ' | ' + phone : ''}</p>
+      </td>
+      <td style="vertical-align:top;text-align:right;padding-bottom:16px;">
+        <p style="margin:0;font-size:16px;font-weight:700;color:${accent};">INVOICE</p>
+        <p style="margin:4px 0 0;font-size:12px;font-weight:600;color:#334155;">${txn.transaction_id || ''}</p>
+        <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Date: ${txn.purchased_at ? new Date(txn.purchased_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</p>
+        <span style="display:inline-block;margin-top:6px;padding:2px 12px;border-radius:10px;font-size:11px;font-weight:600;color:${statusColor};background:${statusColor}15;border:1px solid ${statusColor}30;">${statusLabel}</span>
+      </td>
+    </tr>
   </table>
 
-  <div style="display:flex;justify-content:flex-end;margin-bottom:24px;">
-    <div style="width:240px;">
-      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#64748b;">
-        <span>Subtotal</span>
-        <span>${cur}${Number(txn.total_amount || 0).toLocaleString()}</span>
-      </div>
-      ${taxRate > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:#64748b;">
-        <span>Tax (${taxRate}%)</span>
-        <span>${cur}${taxAmount.toLocaleString()}</span>
-      </div>` : ''}
-      <div style="display:flex;justify-content:space-between;padding:8px 0;margin-top:4px;border-top:2px solid ${accent};font-size:14px;font-weight:700;color:${accent};">
-        <span>Total Due</span>
-        <span>${cur}${totalWithTax.toLocaleString()}</span>
-      </div>
-    </div>
-  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="vertical-align:top;width:50%;">
+        <p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Bill To</p>
+        <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;">${customerName}</p>
+        ${customerEmail ? `<p style="margin:4px 0 0;font-size:13px;color:#64748b;">${customerEmail}</p>` : ''}
+        ${customerPhone ? `<p style="margin:4px 0 0;font-size:13px;color:#64748b;">${customerPhone}</p>` : ''}
+      </td>
+      <td style="vertical-align:top;text-align:right;width:50%;">
+        ${paymentInfoHtml}
+      </td>
+    </tr>
+  </table>
 
-  <div style="text-align:center;padding-top:12px;border-top:1px solid #e2e8f0;">
-    <p style="margin:0;font-size:10px;color:#94a3b8;">${footerText} | ${companyName}${website ? ' | ' + website : ''}</p>
-  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+    <tr style="background:#f1f5f9;">
+      <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Item</th>
+      <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Qty</th>
+      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Price/Unit</th>
+      <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>
+    </tr>
+    <tr>
+      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${itemName}</td>
+      <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${txn.quantity || 1}</td>
+      <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.price_per_unit || txn.total_amount || 0).toLocaleString()}</td>
+      <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
+    </tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="width:60%;"></td>
+      <td style="width:40%;">
+        <table style="width:100%;border-collapse:collapse;" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Subtotal</td>
+            <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
+          </tr>
+          ${taxRate > 0 ? `<tr>
+            <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Tax (${taxRate}%)</td>
+            <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">${cur}${taxAmount.toLocaleString()}</td>
+          </tr>` : ''}
+          <tr>
+            <td style="padding:8px 0 0;font-size:14px;font-weight:700;color:${accent};text-align:left;border-top:2px solid ${accent};margin-top:4px;">Total Due</td>
+            <td style="padding:8px 0 0;font-size:14px;font-weight:700;color:${accent};text-align:right;border-top:2px solid ${accent};">${cur}${totalWithTax.toLocaleString()}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;border-top:1px solid #e2e8f0;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding-top:12px;text-align:center;">
+        <p style="margin:0;font-size:10px;color:#94a3b8;">${footerText} | ${companyName}${website ? ' | ' + website : ''}</p>
+      </td>
+    </tr>
+  </table>
 </div>
 </body></html>`
 }
@@ -169,72 +183,86 @@ export function generateInvoiceReminderHtml(
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payment Reminder - ${txn.transaction_id || ''}</title></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,-apple-system,sans-serif;">
-<div style="max-width:794px;margin:0 auto;background:#fff;padding:32px 40px;">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:2px solid ${accent};margin-bottom:24px;">
-    <div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-        ${logoSrc
-          ? `<img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:120px;max-height:60px;object-fit:contain;" />`
-          : (logoInitial ? `<div style="width:32px;height:32px;border-radius:6px;background:${accent};display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:14px;">${logoInitial}</span></div>` : '')
-        }
-        <span style="font-size:16px;font-weight:700;color:${accent};">${companyName}</span>
-      </div>
-      ${address ? `<p style="margin:0;font-size:11px;color:#64748b;">${address}</p>` : ''}
-      <p style="margin:0;font-size:11px;color:#64748b;">${email}${phone ? ' | ' + phone : ''}</p>
-    </div>
-    <div style="text-align:right;">
-      <p style="margin:0;font-size:16px;font-weight:700;color:${accent};">PAYMENT REMINDER</p>
-      <p style="margin:2px 0 0;font-size:11px;color:#64748b;">${txn.transaction_id || ''}</p>
-    </div>
-  </div>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+<div style="max-width:600px;margin:0 auto;background:#fff;padding:24px 32px;">
 
-  <p style="margin:0 0 16px;font-size:14px;color:#334155;">Dear <strong>${customerName}</strong>,</p>
-  <p style="margin:0 0 16px;font-size:13px;color:#64748b;line-height:1.6;">This is a reminder that your payment for <strong style="color:#0f172a;">${itemName}</strong> is still pending. Please complete your payment at your earliest convenience.</p>
+  <table style="width:100%;border-collapse:collapse;border-bottom:2px solid ${accent};" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="vertical-align:top;padding-bottom:12px;">
+        <table cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            ${logoSrc ? `<td style="vertical-align:middle;padding-right:8px;"><img src="${logoSrc}" alt="Logo" style="width:auto;height:auto;max-width:120px;max-height:48px;border:0;" /></td>` : ''}
+            <td style="vertical-align:middle;">
+              ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:28px;height:28px;line-height:28px;border-radius:4px;background:${accent};color:#fff;font-weight:bold;font-size:14px;text-align:center;margin-right:8px;">${logoInitial}</span>` : ''}
+              <span style="font-size:16px;font-weight:700;color:${accent};">${companyName}</span>
+            </td>
+          </tr>
+        </table>
+        ${address ? `<p style="margin:4px 0 0;font-size:11px;color:#64748b;">${address}</p>` : ''}
+        <p style="margin:2px 0 0;font-size:11px;color:#64748b;">${email}${phone ? ' | ' + phone : ''}</p>
+      </td>
+      <td style="vertical-align:top;text-align:right;padding-bottom:12px;">
+        <p style="margin:0;font-size:15px;font-weight:700;color:${accent};">PAYMENT REMINDER</p>
+        <p style="margin:4px 0 0;font-size:11px;color:#64748b;">${txn.transaction_id || ''}</p>
+      </td>
+    </tr>
+  </table>
 
-  <div style="background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;overflow:hidden;margin-bottom:16px;">
-    <div style="background:${accent};padding:10px 16px;">
-      <p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#fff;">Invoice Details</p>
-    </div>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;width:140px;">Invoice ID</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.transaction_id || ''}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Date</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Quantity</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.quantity || 1}</td>
-      </tr>
-      <tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Subtotal</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
-      </tr>
-      ${taxRate > 0 ? `<tr>
-        <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Tax (${taxRate}%)</td>
-        <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${taxAmount.toLocaleString()}</td>
-      </tr>` : ''}
-      ${paymentInfoHtml}
-    </table>
-    <div style="padding:12px 16px;background:${accent}10;border-top:2px solid ${accent};display:flex;justify-content:space-between;align-items:center;">
-      <span style="font-size:14px;font-weight:700;color:${accent};">Total Due</span>
-      <span style="font-size:16px;font-weight:700;color:${accent};">${cur}${totalWithTax.toLocaleString()}</span>
-    </div>
-  </div>
+  <p style="margin:16px 0 12px;font-size:14px;color:#334155;">Dear <strong>${customerName}</strong>,</p>
+  <p style="margin:0 0 16px;font-size:13px;color:#64748b;line-height:1.5;">This is a reminder that your payment for <strong style="color:#0f172a;">${itemName}</strong> is still pending. Please complete your payment at your earliest convenience.</p>
 
-  <div style="text-align:center;padding:12px;background:#fef2f2;border-radius:8px;margin-bottom:16px;">
-    <p style="margin:0;font-size:13px;font-weight:600;color:#dc2626;">Status: ${statusLabel}</p>
-  </div>
+  <table style="width:100%;border-collapse:collapse;border:1px solid #e2e8f0;margin-bottom:16px;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="background:${accent};padding:10px 16px;" colspan="2">
+        <p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;color:#fff;">Invoice Details</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;width:140px;">Invoice ID</td>
+      <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.transaction_id || ''}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Date</td>
+      <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: '2-digit' })}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Quantity</td>
+      <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.quantity || 1}</td>
+    </tr>
+    <tr>
+      <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Subtotal</td>
+      <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
+    </tr>
+    ${taxRate > 0 ? `<tr>
+      <td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Tax (${taxRate}%)</td>
+      <td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${taxAmount.toLocaleString()}</td>
+    </tr>` : ''}
+    ${paymentInfoHtml}
+    <tr>
+      <td style="padding:12px 16px;font-size:14px;font-weight:700;color:${accent};border-top:2px solid ${accent};background:${accent}10;" colspan="2">
+        Total Due &nbsp; ${cur}${totalWithTax.toLocaleString()}
+      </td>
+    </tr>
+  </table>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding:12px;background:#fef2f2;border-radius:6px;text-align:center;">
+        <p style="margin:0;font-size:13px;font-weight:600;color:#dc2626;">Status: ${statusLabel}</p>
+      </td>
+    </tr>
+  </table>
 
   <p style="margin:0 0 8px;font-size:12px;color:#64748b;line-height:1.5;">If you have already made this payment, please disregard this reminder. For any questions or concerns, feel free to reply to this email.</p>
 
-  <div style="margin-top:24px;padding-top:12px;border-top:1px solid #e2e8f0;text-align:center;">
-    ${address ? `<p style="margin:0 0 2px;font-size:10px;color:#94a3b8;">${address}</p>` : ''}
-    <p style="margin:0;font-size:10px;color:#94a3b8;">${footerText} | ${companyName}${website ? ' | ' + website : ''}</p>
-  </div>
+  <table style="width:100%;border-collapse:collapse;border-top:1px solid #e2e8f0;" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td style="padding-top:12px;text-align:center;">
+        ${address ? `<p style="margin:0 0 2px;font-size:10px;color:#94a3b8;">${address}</p>` : ''}
+        <p style="margin:0;font-size:10px;color:#94a3b8;">${footerText} | ${companyName}${website ? ' | ' + website : ''}</p>
+      </td>
+    </tr>
+  </table>
 </div>
 </body></html>`
 }
@@ -313,48 +341,52 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     }
 
     let yPos = height - 48
-    drawRect(0, height - 88, width, 88, accent)
     const logo = await embedLogo()
     let nameX = margin
     if (logo) {
-      const logoDims = logo.scaleToFit(36, 36)
+      const logoDims = logo.scaleToFit(32, 32)
       page.drawImage(logo, {
-        x: margin, y: height - 48 - logoDims.height,
+        x: margin, y: yPos - logoDims.height,
         width: logoDims.width, height: logoDims.height,
       })
-      nameX = margin + logoDims.width + 12
+      nameX = margin + logoDims.width + 8
     } else if (tpl.logoInitial) {
-      drawRect(margin, height - 48 - 36, 36, 36, accent)
-      drawText(tpl.logoInitial, margin + 10, height - 30, fontBold, 16, rgb(1, 1, 1))
-      nameX = margin + 36 + 12
+      drawRect(margin, yPos - 28, 28, 28, accent)
+      drawText(tpl.logoInitial, margin + 7, yPos - 10, fontBold, 14, rgb(1, 1, 1))
+      nameX = margin + 36
     }
-    drawText(tpl.companyName, nameX, height - 58, fontBold, 20, rgb(1, 1, 1))
+    drawText(tpl.companyName, nameX, yPos - 12, fontBold, 16, accent)
+    yPos -= 18
+    if (tpl.address) {
+      drawText(tpl.address, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
+      yPos -= 14
+    }
+    const contactLine = `${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`
+    drawText(contactLine, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
+
     const invText = 'INVOICE'
-    drawText(invText, width - margin - fontBold.widthOfTextAtSize(invText, 24), height - 54, fontBold, 24, rgb(1, 1, 1))
+    drawText(invText, width - margin - fontBold.widthOfTextAtSize(invText, 18), height - 58, fontBold, 18, accent)
     const tidText = inv.transaction_id || ''
-    drawText(tidText, width - margin - fontBold.widthOfTextAtSize(tidText, 12), height - 78, font, 12, rgb(0.85, 0.85, 0.85))
+    drawText(tidText, width - margin - font.widthOfTextAtSize(tidText, 11), height - 74, font, 11, rgb(0.392, 0.392, 0.482))
     const dateText = `Date: ${dateTime}`
-    drawText(dateText, width - margin - font.widthOfTextAtSize(dateText, 10), height - 92, font, 10, rgb(0.85, 0.85, 0.85))
+    drawText(dateText, width - margin - font.widthOfTextAtSize(dateText, 9), height - 88, font, 9, rgb(0.392, 0.392, 0.482))
 
-    const statusLabel = 'Pending'
-    const statusW = fontBold.widthOfTextAtSize(statusLabel, 10) + 24
-    drawRect(width - margin - statusW, height - 112, statusW, 20, rgb(1, 1, 1))
-    drawText(statusLabel, width - margin - statusW + 12, height - 107, fontBold, 10, rgb(0.796, 0.541, 0.016))
+    const statusLabel = inv.status === 'paid' ? 'Paid' : inv.status === 'cancelled' ? 'Cancelled' : 'Pending'
+    const statusColor = inv.status === 'paid' ? rgb(0.086, 0.639, 0.29) : inv.status === 'cancelled' ? rgb(0.863, 0.149, 0.149) : rgb(0.796, 0.541, 0.016)
+    const statusW = fontBold.widthOfTextAtSize(statusLabel, 9) + 20
+    drawRect(width - margin - statusW, height - 104, statusW, 18, rgb(0.96, 0.96, 0.98))
+    drawText(statusLabel, width - margin - statusW + 10, height - 99, fontBold, 9, statusColor)
 
-    yPos = height - 130
-    drawText(tpl.address, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482))
-    yPos -= 16
-    drawText(`${tpl.email} | ${tpl.phone}`, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482))
-    yPos -= 24
+    yPos -= 8
     drawLine(margin, yPos, width - margin, yPos, accent, 2)
-    yPos -= 24
+    yPos -= 20
 
-    drawText('Bill To', margin, yPos, fontBold, 9, rgb(0.58, 0.58, 0.62))
-    yPos -= 18
+    drawText('Bill To', margin, yPos, fontBold, 8, rgb(0.58, 0.58, 0.62))
+    yPos -= 16
     drawText(customerName, margin, yPos, fontBold, 13, rgb(0.059, 0.059, 0.141))
-    yPos -= 18
-    if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
-    if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 16 }
+    yPos -= 16
+    if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
+    if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
 
     const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName, branchId)
     if (paymentDetail) {
