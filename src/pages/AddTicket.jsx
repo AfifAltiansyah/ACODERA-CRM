@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { X, ArrowLeft } from 'lucide-react'
+import { X, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react'
 import { addTicket } from '../services/dataService'
+import { uploadImage } from '../utils/templateApi'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 import { useCurrency } from '../hooks/useCurrency.jsx'
 
@@ -17,6 +18,9 @@ export function AddTicketPage() {
   const { currency, rates } = useCurrency()
   const { formatCurrency: fc } = useCurrencyFormatter()
   const [loading, setLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+  const fileInputRef = useRef(null)
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -28,13 +32,34 @@ export function AddTicketPage() {
 
   const abbreviation = extractAbbreviation(form.title)
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); return }
+    setUploading(true)
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const b64 = ev.target?.result?.toString().split(',')[1]
+          if (b64) resolve(b64) else reject(new Error('Failed to read file'))
+        }
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
+      })
+      const url = await uploadImage(base64, file.type, 'tickets')
+      setImageUrl(url)
+    } catch (err) { alert('Upload failed: ' + err.message) }
+    setUploading(false)
+  }
+
   const handleSave = async () => {
     if (!form.title) { alert('Title is required'); return }
     if (!form.price || Number(form.price) <= 0) { alert('Please enter a valid price greater than 0'); return }
     if (!form.dateTime) { alert('Please set a date and time'); return }
     setLoading(true)
     try {
-      await addTicket({ ...form, abbreviation })
+      await addTicket({ ...form, abbreviation, imageUrl })
       navigate('/dashboard/tickets')
     } catch (err) {
       alert('Failed to create ticket: ' + (err.message || 'Unknown error'))
@@ -100,6 +125,27 @@ export function AddTicketPage() {
           <label htmlFor="ticketLocation" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Location</label>
           <input id="ticketLocation" name="ticketLocation" type="text" value={form.location} onChange={(e) => setForm(p => ({ ...p, location: e.target.value }))}
             placeholder="e.g. Jakarta Convention Center" className="apple-input" />
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Poster Image</label>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <div className="flex items-start gap-4">
+            {imageUrl ? (
+              <div className="relative">
+                <img src={imageUrl} alt="Poster preview" className="w-24 h-16 object-cover rounded-[10px] border border-[var(--hairline)]" />
+                <button onClick={() => { setImageUrl(''); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-white border border-[var(--hairline)] text-[var(--muted)] hover:text-red-500">
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-[13px] font-medium border border-dashed border-[var(--hairline)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
+                <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload Poster'}
+              </button>
+            )}
+          </div>
         </div>
 
         {form.quantity > 0 && form.title && form.dateTime && (

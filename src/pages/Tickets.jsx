@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Circle } from 'lucide-react'
+import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Circle, Image as ImageIcon } from 'lucide-react'
 import { getTickets, addTicket, deleteTicket } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
@@ -136,6 +136,11 @@ export function TicketsPage() {
           return (
             <motion.div key={t.id} layout>
               <div className="bg-white dark:bg-slate-800 rounded-xl border overflow-hidden transition-shadow border-slate-200 dark:border-slate-700 hover:shadow-lg">
+                {t.imageUrl && (
+                  <div className="w-full h-32 overflow-hidden bg-slate-100 dark:bg-slate-700">
+                    <img src={t.imageUrl} alt={t.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
                 <button onClick={() => openTicket(t)} className="w-full text-left p-5">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">

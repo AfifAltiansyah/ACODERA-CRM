@@ -24,7 +24,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { user_id, image_base64, mime_type } = await req.json()
+    const { user_id, image_base64, mime_type, folder } = await req.json()
     if (!user_id || !image_base64) {
       return new Response(JSON.stringify({ error: 'Missing user_id or image_base64' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -32,7 +32,8 @@ serve(async (req) => {
     }
 
     const ext = (mime_type || 'image/png').split('/')[1] || 'png'
-    const fileName = `logo_${user_id}_${Date.now()}.${ext}`
+    const prefix = folder && typeof folder === 'string' ? folder.replace(/[^a-zA-Z0-9_\-\/]/g, '') + '/' : ''
+    const fileName = `${prefix}logo_${user_id}_${Date.now()}.${ext}`
     const buffer = Uint8Array.from(atob(image_base64), c => c.charCodeAt(0))
 
     const { data, error } = await supabase.storage

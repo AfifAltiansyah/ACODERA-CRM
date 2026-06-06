@@ -77,7 +77,13 @@ export function TicketDetailPage() {
         Back to Tickets
       </button>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {ticket.imageUrl && (
+          <div className="w-full h-48 sm:h-56 overflow-hidden bg-slate-100 dark:bg-slate-700">
+            <img src={ticket.imageUrl} alt={ticket.title} className="w-full h-full object-cover" />
+          </div>
+        )}
+        <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-500/10">
@@ -116,6 +122,7 @@ export function TicketDetailPage() {
               <span>{ticket.dateTime}</span>
             </div>
           )}
+        </div>
         </div>
       </div>
 
