@@ -112,19 +112,8 @@ serve(async (req) => {
                 if (inv.branch) await refreshPaymentOptions(inv.branch)
                 const invoiceTemplate = await fetchInvoiceTemplate(supabase, inv.branch)
 
-                if (!auto.body || auto.body.trim() === '') {
-                  htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
-                  subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
-                } else {
-                  const replaced = replaceTemplateVars(htmlBody, subject, inv, invoiceTemplate, {
-                    contactName: email,
-                    contactEmail: email,
-                    event: 'invoice.overdue',
-                    senderEmail: SENDER_EMAIL,
-                  })
-                  htmlBody = replaced.htmlBody
-                  subject = replaced.subject
-                }
+                htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
+                subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
 
                 pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
               }
@@ -210,19 +199,7 @@ serve(async (req) => {
             }
 
             let subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
-            let htmlBody: string
-            if (!auto.body || auto.body.trim() === '') {
-              htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
-            } else {
-              const replaced = replaceTemplateVars(auto.body, subject, inv, invoiceTemplate, {
-                contactName: inv.buyer_name,
-                contactEmail: inv.buyer_email,
-                event: 'invoice.overdue',
-                senderEmail: SENDER_EMAIL,
-              })
-              htmlBody = replaced.htmlBody
-              subject = replaced.subject
-            }
+            let htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
 
             const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
 
@@ -299,19 +276,7 @@ serve(async (req) => {
             let subject = auto.subject || (auto.trigger_event === 'invoice.paid'
               ? `Payment Received - ${inv.transaction_id}`
               : `Invoice Created - ${inv.transaction_id}`)
-            let htmlBody: string
-            if (!auto.body || auto.body.trim() === '') {
-              htmlBody = generateInvoiceHtml(inv, invoiceTemplate, eventLabel, inv.branch)
-            } else {
-              const replaced = replaceTemplateVars(auto.body, subject, inv, invoiceTemplate, {
-                contactName: inv.buyer_name,
-                contactEmail: inv.buyer_email,
-                event: auto.trigger_event,
-                senderEmail: SENDER_EMAIL,
-              })
-              htmlBody = replaced.htmlBody
-              subject = replaced.subject
-            }
+            let htmlBody = generateInvoiceHtml(inv, invoiceTemplate, eventLabel, inv.branch)
 
             const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
 

@@ -104,7 +104,7 @@ serve(async (req) => {
 
       if (contactEmail) {
         recipients = [contactEmail]
-      } else if (auto.type === 'Invoice Reminder' || event === 'invoice.overdue' || event === 'invoice.paid') {
+      } else if (auto.type === 'Invoice Reminder' || event === 'invoice.overdue' || event === 'invoice.paid' || event === 'invoice.cancelled') {
         if (extraData.buyer_email) {
           recipients = [String(extraData.buyer_email)]
         } else {
@@ -148,7 +148,7 @@ serve(async (req) => {
       let htmlBody = auto.body || `<p>${subject}</p>`
       const fromName = auto.from_name || 'Acodera CRM'
 
-      const isInvoiceEvent = event === 'invoice.created' || event === 'invoice.paid' || event === 'invoice.overdue'
+      const isInvoiceEvent = event === 'invoice.created' || event === 'invoice.paid' || event === 'invoice.overdue' || event === 'invoice.cancelled'
       let invoiceTemplate: any = payloadTemplate || null
       let txnData: any = null
       let serverPdfBase64: string | null = null
@@ -191,20 +191,20 @@ serve(async (req) => {
               invoiceTemplate = await fetchInvoiceTemplate(supabase, txnData.branch)
             }
 
-            const statusLabel = event === 'invoice.paid' ? 'Paid' : event === 'invoice.overdue' ? 'Overdue' : 'Pending'
+            const statusLabel = event === 'invoice.paid' ? 'Paid' : event === 'invoice.overdue' ? 'Overdue' : event === 'invoice.cancelled' ? 'Cancelled' : 'Pending'
 
-            if (!auto.body || auto.body.trim() === '') {
-              if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
-                htmlBody = generateInvoiceReminderHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
-              } else {
-                htmlBody = generateInvoiceHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
-              }
-              subject = auto.subject || (event === 'invoice.paid'
-                ? `Payment Received - ${txnData.transaction_id}`
-                : event === 'invoice.overdue'
-                  ? `Payment Overdue - ${txnData.transaction_id}`
-                  : `Invoice Created - ${txnData.transaction_id}`)
+            if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
+              htmlBody = generateInvoiceReminderHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
+            } else {
+              htmlBody = generateInvoiceHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
             }
+            subject = auto.subject || (event === 'invoice.paid'
+              ? `Payment Received - ${txnData.transaction_id}`
+              : event === 'invoice.overdue'
+                ? `Payment Overdue - ${txnData.transaction_id}`
+                : event === 'invoice.cancelled'
+                  ? `Invoice Cancelled - ${txnData.transaction_id}`
+                  : `Invoice Created - ${txnData.transaction_id}`)
 
             serverPdfBase64 = await generateInvoicePdf(txnData, invoiceTemplate, txnData.branch)
             if (serverPdfBase64) {
