@@ -96,6 +96,37 @@ export function AddTicketPage() {
           </div>
         )}
 
+        <div className="rounded-[14px] border-2 border-dashed border-[var(--hairline)] p-5 bg-[var(--parchment)]/50">
+          <label className="block text-[13px] font-medium text-[var(--ink)] mb-3">Poster Image</label>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <div className="flex items-center gap-4">
+            {imageUrl ? (
+              <div className="relative">
+                <img src={imageUrl} alt="Poster preview" className="w-24 h-16 object-cover rounded-[10px] border border-[var(--hairline)]" />
+                <button onClick={() => { setImageUrl(''); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                  className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-white border border-[var(--hairline)] text-[var(--muted)] hover:text-red-500">
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center border-2 border-dashed border-[var(--hairline)] rounded-[12px] py-8 hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 cursor-pointer transition-all"
+                onClick={() => fileInputRef.current?.click()}>
+                <div className="text-center">
+                  <Upload size={28} className="mx-auto mb-2 text-[var(--muted)]" />
+                  <p className="text-[13px] font-medium text-[var(--muted)]">Click to upload poster</p>
+                  <p className="text-[11px] text-[var(--muted)] mt-0.5">PNG, JPG up to 2MB</p>
+                </div>
+              </div>
+            )}
+            {uploading && (
+              <div className="flex items-center gap-2 text-[13px] text-[var(--accent)]">
+                <div className="h-4 w-4 rounded-full border-2 border-[var(--accent)] border-t-transparent animate-spin" />
+                Uploading...
+              </div>
+            )}
+          </div>
+        </div>
+
         <div>
           <label htmlFor="ticketDescription" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Description</label>
           <textarea id="ticketDescription" name="ticketDescription" value={form.description} onChange={(e) => setForm(p => ({ ...p, description: e.target.value }))}
@@ -125,27 +156,6 @@ export function AddTicketPage() {
           <label htmlFor="ticketLocation" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Location</label>
           <input id="ticketLocation" name="ticketLocation" type="text" value={form.location} onChange={(e) => setForm(p => ({ ...p, location: e.target.value }))}
             placeholder="e.g. Jakarta Convention Center" className="apple-input" />
-        </div>
-
-        <div>
-          <label className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Poster Image</label>
-          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-          <div className="flex items-start gap-4">
-            {imageUrl ? (
-              <div className="relative">
-                <img src={imageUrl} alt="Poster preview" className="w-24 h-16 object-cover rounded-[10px] border border-[var(--hairline)]" />
-                <button onClick={() => { setImageUrl(''); if (fileInputRef.current) fileInputRef.current.value = '' }}
-                  className="absolute -top-1.5 -right-1.5 p-0.5 rounded-full bg-white border border-[var(--hairline)] text-[var(--muted)] hover:text-red-500">
-                  <X size={12} />
-                </button>
-              </div>
-            ) : (
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-[13px] font-medium border border-dashed border-[var(--hairline)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
-                <Upload size={15} /> {uploading ? 'Uploading...' : 'Upload Poster'}
-              </button>
-            )}
-          </div>
         </div>
 
         {form.quantity > 0 && form.title && form.dateTime && (
