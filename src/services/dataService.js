@@ -561,7 +561,7 @@ function groupInvoices(data) {
       dateTime: dt.toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }),
       itemCode: rows.map(r => r.unique_code).join(', '),
       itemName: ticketTitle,
-      quantity: rows.length,
+      quantity: rows.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
       pricePerUnit: Number(first.price_per_unit),
       totalAmount: rows.reduce((sum, r) => sum + Number(r.total_amount), 0),
       customerName: first.buyer_name || '',
