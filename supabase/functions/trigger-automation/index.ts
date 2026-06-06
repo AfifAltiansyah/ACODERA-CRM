@@ -266,6 +266,7 @@ serve(async (req) => {
               console.warn('[trigger-automation] No PDF attachment available for', email)
             }
 
+            console.log('[trigger-automation] Sending email to', email, 'subject:', subject, 'body length:', htmlBody?.length || 0)
             const result = await sendEmail({ to: email, subject, htmlContent: htmlBody, fromName, attachments: emailAttachments })
 
             if (result.success) {

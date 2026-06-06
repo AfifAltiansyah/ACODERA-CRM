@@ -341,14 +341,13 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     }
 
     let yPos = height - 48
+
+    const rightColX = width * 0.52
     const logo = await embedLogo()
     let nameX = margin
     if (logo) {
       const logoDims = logo.scaleToFit(32, 32)
-      page.drawImage(logo, {
-        x: margin, y: yPos - logoDims.height,
-        width: logoDims.width, height: logoDims.height,
-      })
+      page.drawImage(logo, { x: margin, y: yPos - logoDims.height, width: logoDims.width, height: logoDims.height })
       nameX = margin + logoDims.width + 8
     } else if (tpl.logoInitial) {
       drawRect(margin, yPos - 28, 28, 28, accent)
@@ -356,46 +355,51 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       nameX = margin + 36
     }
     drawText(tpl.companyName, nameX, yPos - 12, fontBold, 16, accent)
-    yPos -= 18
-    if (tpl.address) {
-      drawText(tpl.address, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
-      yPos -= 14
-    }
-    const contactLine = `${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`
-    drawText(contactLine, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
 
     const invText = 'INVOICE'
-    drawText(invText, width - margin - fontBold.widthOfTextAtSize(invText, 18), height - 58, fontBold, 18, accent)
+    drawText(invText, rightColX, yPos - 12, fontBold, 18, accent)
+    yPos -= 22
+
+    if (tpl.address) {
+      drawText(tpl.address, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
+    }
     const tidText = inv.transaction_id || ''
-    drawText(tidText, width - margin - font.widthOfTextAtSize(tidText, 11), height - 74, font, 11, rgb(0.392, 0.392, 0.482))
+    drawText(tidText, rightColX, yPos - 2, font, 11, rgb(0.392, 0.392, 0.482))
+    yPos -= 14
+
+    const contactLine = `${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`
+    drawText(contactLine, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482))
     const dateText = `Date: ${dateTime}`
-    drawText(dateText, width - margin - font.widthOfTextAtSize(dateText, 9), height - 88, font, 9, rgb(0.392, 0.392, 0.482))
+    drawText(dateText, rightColX, yPos - 2, font, 9, rgb(0.392, 0.392, 0.482))
+    yPos -= 14
 
     const statusLabel = inv.status === 'paid' ? 'Paid' : inv.status === 'cancelled' ? 'Cancelled' : 'Pending'
     const statusColor = inv.status === 'paid' ? rgb(0.086, 0.639, 0.29) : inv.status === 'cancelled' ? rgb(0.863, 0.149, 0.149) : rgb(0.796, 0.541, 0.016)
-    const statusW = fontBold.widthOfTextAtSize(statusLabel, 9) + 20
-    drawRect(width - margin - statusW, height - 104, statusW, 18, rgb(0.96, 0.96, 0.98))
-    drawText(statusLabel, width - margin - statusW + 10, height - 99, fontBold, 9, statusColor)
+    const statusW = font.widthOfTextAtSize(statusLabel, 9) + 16
+    drawRect(rightColX, yPos - 3, statusW, 16, rgb(0.96, 0.96, 0.98))
+    drawText(statusLabel, rightColX + 8, yPos + 8, font, 9, statusColor)
+    yPos -= 6
 
-    yPos -= 8
     drawLine(margin, yPos, width - margin, yPos, accent, 2)
     yPos -= 20
 
     drawText('Bill To', margin, yPos, fontBold, 8, rgb(0.58, 0.58, 0.62))
-    yPos -= 16
+    yPos -= 14
     drawText(customerName, margin, yPos, fontBold, 13, rgb(0.059, 0.059, 0.141))
     yPos -= 16
     if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
     if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
 
+    const saveBillToY = yPos
+
     const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName, branchId)
     if (paymentDetail) {
-      const payX = width / 2 + 20
-      drawText('Payment Details', payX, yPos + 20, fontBold, 9, rgb(0.58, 0.58, 0.62))
-      drawText(`Method: ${paymentDetail.label}`, payX, yPos + 2, font, 11, rgb(0.2, 0.2, 0.28))
-      drawText(`Info: ${paymentDetail.detail}`, payX, yPos - 14, font, 11, rgb(0.2, 0.2, 0.28))
+      const payX = rightColX
+      drawText('Payment Details', payX, saveBillToY, fontBold, 8, rgb(0.58, 0.58, 0.62))
+      drawText(`Method: ${paymentDetail.label}`, payX, saveBillToY - 16, font, 10, rgb(0.2, 0.2, 0.28))
+      drawText(`Info: ${paymentDetail.detail}`, payX, saveBillToY - 30, font, 10, rgb(0.2, 0.2, 0.28))
     }
-    yPos -= 40
+    yPos -= 30
 
     if (inv.item_name || inv.ticket_title) {
       const ticketName = inv.item_name || inv.ticket_title
