@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Ticket, MapPin, Calendar, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban } from 'lucide-react'
+import { ArrowLeft, Ticket, MapPin, Calendar, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban, Upload } from 'lucide-react'
 import { getTicketInstances } from '../services/dataService'
+import { uploadImage } from '../utils/templateApi'
+import { supabase } from '../lib/supabase'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 
 function formatPurchasedDate(dateStr) {
@@ -37,6 +39,30 @@ export function TicketDetailPage() {
   const [instances, setInstances] = useState([])
   const [loading, setLoading] = useState(true)
   const [copiedCode, setCopiedCode] = useState(null)
+  const [uploadingPoster, setUploadingPoster] = useState(false)
+  const posterInputRef = useRef(null)
+
+  const handlePosterUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) { alert('Image must be under 2MB'); return }
+    setUploadingPoster(true)
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (ev) => {
+          const b64 = ev.target?.result?.toString().split(',')[1]
+          if (b64) resolve(b64) else reject(new Error('Failed to read file'))
+        }
+        reader.onerror = () => reject(new Error('Failed to read file'))
+        reader.readAsDataURL(file)
+      })
+      const url = await uploadImage(base64, file.type, 'tickets')
+      await supabase.from('tickets').update({ image_url: url }).eq('id', ticket.id)
+      setTicket(prev => ({ ...prev, imageUrl: url }))
+    } catch (err) { alert('Upload failed: ' + err.message) }
+    setUploadingPoster(false)
+  }
 
   useEffect(() => {
     const ticketData = JSON.parse(sessionStorage.getItem('selectedTicket') || 'null')
@@ -78,11 +104,23 @@ export function TicketDetailPage() {
       </button>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-        {ticket.imageUrl && (
-          <div className="w-full h-48 sm:h-56 overflow-hidden bg-slate-100 dark:bg-slate-700">
+        <div className="w-full h-48 sm:h-56 overflow-hidden bg-slate-100 dark:bg-slate-700 relative group">
+          {ticket.imageUrl ? (
             <img src={ticket.imageUrl} alt={ticket.title} className="w-full h-full object-cover" />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Ticket size={48} className="text-slate-300 dark:text-slate-600" />
+            </div>
+          )}
+          <input ref={posterInputRef} type="file" accept="image/*" onChange={handlePosterUpload} className="hidden" />
+          <button
+            onClick={() => posterInputRef.current?.click()}
+            disabled={uploadingPoster}
+            className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/50 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+          >
+            <Upload size={13} /> {uploadingPoster ? 'Uploading...' : ticket.imageUrl ? 'Change' : 'Upload Poster'}
+          </button>
+        </div>
         <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
