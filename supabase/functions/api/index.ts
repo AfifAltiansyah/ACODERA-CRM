@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { corsHeaders, jsonResponse, verifyToken, runSql } from './lib.ts'
-import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal } from './routes.ts'
+import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handlePaymentOptions, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal } from './routes.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -63,6 +63,10 @@ async function route(req: Request, path: string, method: string): Promise<Respon
 
   if (path.startsWith('/audit-logs')) {
     return handleAuditLogs(req, method, path)
+  }
+
+  if (path.startsWith('/payment-options')) {
+    return handlePaymentOptions(req, method, path)
   }
 
   if (path.startsWith('/external')) {

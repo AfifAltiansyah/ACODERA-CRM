@@ -160,14 +160,12 @@ export function PaymentOptionsPage() {
   }
 
   return (
-    <div className="space-y-10 max-w-5xl">
-      <div>
-        <h1 className="text-[34px] font-semibold tracking-[-0.374px] text-[#1d1d1f]" style={{ fontFamily: "'SF Pro Display', 'system-ui', '-apple-system', sans-serif" }}>
-          Payment Options
-        </h1>
-        <p className="mt-1.5 text-[17px] text-[#6e6e73] leading-[1.47] tracking-[-0.374px]" style={{ fontFamily: "'SF Pro Text', 'system-ui', '-apple-system', sans-serif" }}>
-          Configure how customers pay for each branch
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] text-[var(--ink)]">Payment Options</h1>
+          <p className="text-[13px] text-[var(--muted)] mt-1">Configure how customers pay for each branch</p>
+        </div>
       </div>
 
       <AnimatePresence>

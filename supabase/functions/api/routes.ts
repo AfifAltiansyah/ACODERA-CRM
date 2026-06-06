@@ -580,6 +580,83 @@ export async function handleAuditLogs(req: Request, method: string, path: string
   }
 }
 
+// ─── Payment Options ─────────────────────────────────────────────────
+
+export async function handlePaymentOptions(req: Request, method: string, path: string): Promise<Response> {
+  const user = await extractUser(req)
+  const authErr = requireAuth(user)
+  if (authErr) return authErr
+
+  const params = extractParams(path)
+  const body = await parseBody(req)
+  const supabase = getSupabase()
+
+  function branchWhere() {
+    if (user!.role === 'owner') return null
+    return { column: 'branch_id', value: user!.branch_id }
+  }
+
+  try {
+    if (method === 'GET' && !params.id) {
+      const filter = branchWhere()
+      let q = supabase.from('payment_options').select('*').order('created_at', { ascending: true })
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { data, error } = await q
+      if (error) throw error
+      return jsonResponse({ options: data || [] })
+    }
+
+    if (method === 'GET' && params.id) {
+      const filter = branchWhere()
+      let q = supabase.from('payment_options').select('*').eq('id', params.id)
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { data } = await q.single()
+      if (!data) return jsonResponse({ error: 'Not found' }, 404)
+      return jsonResponse(data)
+    }
+
+    if (method === 'POST' && !params.id) {
+      const insertData = { ...body } as Record<string, unknown>
+      if (user!.role !== 'owner') {
+        insertData.branch_id = user!.branch_id
+      } else if (!insertData.branch_id) {
+        return jsonResponse({ error: 'branch_id is required for owners' }, 400)
+      }
+      const { data, error } = await supabase.from('payment_options').insert(insertData).select()
+      if (error) throw error
+      return jsonResponse(data?.[0], 201)
+    }
+
+    if (method === 'PUT' && params.id) {
+      const updateData = { ...body } as Record<string, unknown>
+      delete updateData.id
+      delete updateData.branch_id
+      delete updateData.created_at
+      const filter = branchWhere()
+      let q = supabase.from('payment_options').update(updateData).eq('id', params.id)
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { data, error } = await q.select()
+      if (error) throw error
+      if (!data || data.length === 0) return jsonResponse({ error: 'Not found' }, 404)
+      return jsonResponse(data[0])
+    }
+
+    if (method === 'DELETE' && params.id) {
+      const filter = branchWhere()
+      let q = supabase.from('payment_options').delete().eq('id', params.id)
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { error } = await q
+      if (error) throw error
+      return jsonResponse({ message: 'Payment option deleted' })
+    }
+
+    return jsonResponse({ error: 'Method not allowed' }, 405)
+  } catch (err) {
+    console.error('Payment options error:', err)
+    return jsonResponse({ error: 'Failed to process payment option' }, 500)
+  }
+}
+
 // ─── Generic data CRUD ────────────────────────────────────────────────
 
 async function listRecords(table: string, user: Record<string, unknown>) {

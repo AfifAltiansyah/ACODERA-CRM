@@ -39,20 +39,29 @@ CREATE POLICY "Users can read own branch payment_options"
   ON payment_options FOR SELECT
   USING (
     auth.jwt()->>'role' = 'owner'
-    OR branch_id = auth.jwt()->>'branch'
+    OR branch_id = auth.jwt()->>'branch_id'
   );
 
-CREATE POLICY "Owners can manage own branch payment_options"
+CREATE POLICY "Users can insert own branch payment_options"
   ON payment_options FOR INSERT
-  WITH CHECK (auth.jwt()->>'role' = 'owner');
+  WITH CHECK (
+    auth.jwt()->>'role' = 'owner'
+    OR branch_id = auth.jwt()->>'branch_id'
+  );
 
-CREATE POLICY "Owners can update own branch payment_options"
+CREATE POLICY "Users can update own branch payment_options"
   ON payment_options FOR UPDATE
-  USING (auth.jwt()->>'role' = 'owner');
+  USING (
+    auth.jwt()->>'role' = 'owner'
+    OR branch_id = auth.jwt()->>'branch_id'
+  );
 
-CREATE POLICY "Owners can delete own branch payment_options"
+CREATE POLICY "Users can delete own branch payment_options"
   ON payment_options FOR DELETE
-  USING (auth.jwt()->>'role' = 'owner');
+  USING (
+    auth.jwt()->>'role' = 'owner'
+    OR branch_id = auth.jwt()->>'branch_id'
+  );
 
 -- Seed default payment options for any branch without existing data
 -- Run this separately for each branch that needs defaults:
