@@ -231,7 +231,7 @@ export function generateInvoiceReminderHtml(
 
 export async function generateInvoicePdf(inv: any, template: any, branchId?: string) {
   try {
-    console.log('[PDF] Starting generation for', inv?.transaction_id || 'unknown', 'branch:', branchId)
+    console.log('[PDF] Starting generation for', inv?.transaction_id || 'unknown', 'branch:', branchId, 'has_template:', !!template)
     const tpl = resolveTemplate(template)
     const cur = tpl.currencySymbol
     const taxRate = tpl.taxRate
