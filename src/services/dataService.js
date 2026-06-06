@@ -1030,13 +1030,24 @@ export async function sendAutomationEmail({ to, fromName, subject, body, automat
     payload.attachments = attachments
   }
 
-  const { data, error } = await supabase.functions.invoke('send-automation-email', {
-    body: payload,
-  })
+  const res = await fetch(
+    'https://rthxlprgtfuhntpcdhsh.supabase.co/functions/v1/send-automation-email',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: AUTOMATION_SECRET,
+      },
+      body: JSON.stringify(payload),
+    }
+  )
 
-  if (error) {
-    throw new Error(error.message || String(error))
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}))
+    throw new Error(errData.error || `HTTP ${res.status}`)
   }
+
+  const data = await res.json()
 
   if (data && typeof data === 'object' && data.success === false) {
     throw new Error(data.error || 'Failed to send email')
@@ -1130,19 +1141,28 @@ export async function refundTicketInstance(instanceId) {
   return formatTransaction(data)
 }
 
+const AUTOMATION_SECRET = 'b05d0ae8c2e63e145a706c026dd6149f20353d6986a83cd40d4637a7fd1f99f2'
+
 export async function triggerAutomationEvent(event, data = {}) {
   try {
-    const { data: result, error } = await supabase.functions.invoke('trigger-automation', {
-      params: { event },
-      body: data,
-    })
-
-    if (error) {
-      console.error('triggerAutomationEvent error:', error)
+    const res = await fetch(
+      'https://rthxlprgtfuhntpcdhsh.supabase.co/functions/v1/trigger-automation' +
+        '?event=' + encodeURIComponent(event),
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: AUTOMATION_SECRET,
+        },
+        body: JSON.stringify(data),
+      }
+    )
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      console.error('triggerAutomationEvent error:', res.status, errData)
       return null
     }
-
-    return result
+    return await res.json()
   } catch (err) {
     console.error('triggerAutomationEvent error:', err)
     return null
