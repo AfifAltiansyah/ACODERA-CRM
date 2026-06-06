@@ -32,13 +32,17 @@ export function verifyToken(token: string): { id: number; email: string; role: s
   return jwt.verify(token, getJwtSecret(), { algorithms: ['HS256'] }) as any
 }
 
-export function getCorsOrigin(): string {
-  return Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app'
+export function getAllowedOrigins(): string[] {
+  const env = Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app'
+  return env.split(',').map(s => s.trim()).filter(Boolean)
 }
 
-export function corsHeaders(): Record<string, string> {
+export function corsHeaders(req?: Request): Record<string, string> {
+  const allowed = getAllowedOrigins()
+  const origin = req?.headers.get('origin') || ''
+  const allowOrigin = allowed.includes(origin) ? origin : allowed[0]
   return {
-    'Access-Control-Allow-Origin': getCorsOrigin(),
+    'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-api-key, x-client-info, apikey, content-type',
     'Access-Control-Allow-Credentials': 'true',
@@ -50,10 +54,10 @@ export function getSenderEmail(): string {
   return Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 }
 
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: unknown, status = 200, req?: Request): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders(), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    headers: { ...corsHeaders(req), 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   })
 }
 
@@ -162,8 +166,10 @@ export function getClientInfo(req: Request): { ip: string; userAgent: string } {
 export async function authenticateApiKey(
   req: Request
 ): Promise<{ user: Record<string, unknown> | null; error: Response | null }> {
+  const respond = (data: unknown, status = 200) => jsonResponse(data, status, req)
+
   const apiKey = req.headers.get('x-api-key')
-  if (!apiKey) return { user: null, error: jsonResponse({ error: 'API key required. Use x-api-key header.' }, 401) }
+  if (!apiKey) return { user: null, error: respond({ error: 'API key required. Use x-api-key header.' }, 401) }
 
   try {
     const hash = await hashApiKey(apiKey)
@@ -175,12 +181,12 @@ export async function authenticateApiKey(
       .eq('status', 'active')
 
     if (error || !keys || keys.length === 0) {
-      return { user: null, error: jsonResponse({ error: 'Invalid or revoked API key' }, 401) }
+      return { user: null, error: respond({ error: 'Invalid or revoked API key' }, 401) }
     }
 
     const keyData = keys[0] as any
     if (!checkRateLimit(keyData.key_prefix, keyData.rate_limit || 100)) {
-      return { user: null, error: jsonResponse({ error: 'Rate limit exceeded. Try again later.' }, 429) }
+      return { user: null, error: respond({ error: 'Rate limit exceeded. Try again later.' }, 429) }
     }
 
     const { data: userData } = await supabase
@@ -190,7 +196,7 @@ export async function authenticateApiKey(
       .single()
 
     if (!userData) {
-      return { user: null, error: jsonResponse({ error: 'API key owner not found' }, 401) }
+      return { user: null, error: respond({ error: 'API key owner not found' }, 401) }
     }
 
     await supabase.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', keyData.id)
@@ -210,7 +216,7 @@ export async function authenticateApiKey(
     }
   } catch (err) {
     console.error('API key auth error:', err)
-    return { user: null, error: jsonResponse({ error: 'Authentication failed' }, 500) }
+    return { user: null, error: respond({ error: 'Authentication failed' }, 500) }
   }
 }
 

@@ -702,9 +702,11 @@ async function findUserById(id: number) {
 }
 
 export async function handleExternal(req: Request, method: string, path: string): Promise<Response> {
+  const respond = (data: unknown, status = 200) => jsonResponse(data, status, req)
+
   const { user, error } = await authenticateApiKey(req)
   if (error) return error
-  if (!user) return jsonResponse({ error: 'Authentication failed' }, 401)
+  if (!user) return respond({ error: 'Authentication failed' }, 401)
 
   const supabase = getSupabase()
   const shortPath = path.replace(/^\/external/, '') || '/'
@@ -716,6 +718,7 @@ export async function handleExternal(req: Request, method: string, path: string)
 
   function tenantWhere() {
     if (user!.role === 'owner') return null
+    if (entity === 'payment_options') return { column: 'branch_id', value: user!.branch_id }
     return { column: 'branch', value: user!.branch_id }
   }
 
@@ -739,7 +742,7 @@ export async function handleExternal(req: Request, method: string, path: string)
       if (filter) q = q.eq(filter.column, filter.value)
       const { data } = await q
       await audit(`${method.toLowerCase()}.list`)
-      return jsonResponse({ data })
+      return respond({ data })
     }
 
     if (method === 'GET' && id) {
@@ -747,14 +750,20 @@ export async function handleExternal(req: Request, method: string, path: string)
       let q = supabase.from(entity).select('*').eq('id', id)
       if (filter) q = q.eq(filter.column, filter.value)
       const { data } = await q.single()
-      if (!data) return jsonResponse({ error: 'Not found' }, 404)
+      if (!data) return respond({ error: 'Not found' }, 404)
       await audit(`${method.toLowerCase()}.get`, id)
-      return jsonResponse({ data })
+      return respond({ data })
     }
 
     if (method === 'POST' && !id) {
       const insertData = { ...body } as Record<string, unknown>
-      if (user!.role !== 'owner') insertData.branch = user!.branch_id
+      if (user!.role !== 'owner') {
+        if (entity === 'payment_options') {
+          insertData.branch_id = user!.branch_id
+        } else {
+          insertData.branch = user!.branch_id
+        }
+      }
       const { data: created, error: createErr } = await supabase
         .from(entity)
         .insert(insertData)
@@ -762,7 +771,7 @@ export async function handleExternal(req: Request, method: string, path: string)
         .single()
       if (createErr) throw createErr
       await audit(`${method.toLowerCase()}.create`, String(created.id))
-      return jsonResponse({ data: created }, 201)
+      return respond({ data: created }, 201)
     }
 
     if (method === 'PUT' && id) {
@@ -773,7 +782,7 @@ export async function handleExternal(req: Request, method: string, path: string)
       const { error: updateErr } = await q
       if (updateErr) throw updateErr
       await audit(`${method.toLowerCase()}.update`, id)
-      return jsonResponse({ success: true })
+      return respond({ success: true })
     }
 
     if (method === 'DELETE' && id) {
@@ -783,13 +792,13 @@ export async function handleExternal(req: Request, method: string, path: string)
       const { error: deleteErr } = await q
       if (deleteErr) throw deleteErr
       await audit(`${method.toLowerCase()}.delete`, id)
-      return jsonResponse({ success: true })
+      return respond({ success: true })
     }
 
-    return jsonResponse({ error: 'Method not allowed' }, 405)
+    return respond({ error: 'Method not allowed' }, 405)
   } catch (err) {
     console.error('External API error:', err)
-    return jsonResponse({ error: 'Internal server error' }, 500)
+    return respond({ error: 'Internal server error' }, 500)
   }
 }
 

@@ -4,7 +4,7 @@ import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, han
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders(), status: 204 })
+    return new Response(null, { headers: corsHeaders(req), status: 204 })
   }
 
   const url = new URL(req.url)
