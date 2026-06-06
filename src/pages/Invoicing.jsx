@@ -330,7 +330,7 @@ export function InvoicingPage() {
     if (newStatus === getCurrentStatus(id)) return
     if (newStatus === 'cancelled' && !window.confirm('Cancel this invoice? This cannot be undone.')) return
     try {
-      await updateTransactionStatus(Number(id), newStatus)
+      await updateTransactionStatus(id, newStatus)
       refresh()
     } catch (err) {
       alert('Failed to update status: ' + (err.message || 'Unknown error'))

@@ -1163,17 +1163,20 @@ async function insertNotification({ type, title, message, entityId, link }) {
   }
 }
 
-export async function updateTransactionStatus(id, newStatus) {
-  const { data: current, error: fetchError } = await filterBranch(
-    supabase.from('transactions').select('*').eq('id', Number(id))
-  ).single()
+export async function updateTransactionStatus(transactionId, newStatus) {
+  const { data: rows, error: fetchError } = await filterBranch(
+    supabase.from('transactions').select('*').eq('transaction_id', transactionId)
+  )
 
   if (fetchError) throw fetchError
+  if (!rows || rows.length === 0) throw new Error('Invoice not found')
+
+  const current = rows[0]
   const oldStatus = current.status
 
-  const { data, error } = await filterBranch(
-    supabase.from('transactions').update({ status: newStatus }).eq('id', Number(id))
-  ).select().single()
+  const { error } = await filterBranch(
+    supabase.from('transactions').update({ status: newStatus }).eq('transaction_id', transactionId)
+  )
 
   if (error) throw error
 
@@ -1238,5 +1241,5 @@ export async function updateTransactionStatus(id, newStatus) {
     })
   }
 
-  return formatTransaction(data)
+  return formatTransaction(current)
 }

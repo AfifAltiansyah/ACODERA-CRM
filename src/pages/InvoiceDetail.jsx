@@ -87,7 +87,7 @@ export function InvoiceDetailPage() {
   const handleMarkPaid = async () => {
     if (!window.confirm(`Mark this invoice as paid? This will trigger any "Invoice Paid" automations.`)) return
     try {
-      await updateTransactionStatus(parseInt(invoice.id), 'paid')
+      await updateTransactionStatus(invoice.id, 'paid')
       setInvoice(prev => ({ ...prev, status: 'paid' }))
     } catch (err) {
       alert('Failed to update status: ' + (err.message || 'Unknown error'))
@@ -97,7 +97,7 @@ export function InvoiceDetailPage() {
   const handleMarkCancelled = async () => {
     if (!window.confirm('Cancel this invoice? This cannot be undone.')) return
     try {
-      await updateTransactionStatus(parseInt(invoice.id), 'cancelled')
+      await updateTransactionStatus(invoice.id, 'cancelled')
       setInvoice(prev => ({ ...prev, status: 'cancelled' }))
     } catch (err) {
       alert('Failed to cancel invoice: ' + (err.message || 'Unknown error'))
@@ -107,7 +107,7 @@ export function InvoiceDetailPage() {
   const handleMarkPending = async () => {
     if (!window.confirm('Reopen this invoice? It will be set back to pending status.')) return
     try {
-      await updateTransactionStatus(parseInt(invoice.id), 'pending')
+      await updateTransactionStatus(invoice.id, 'pending')
       setInvoice(prev => ({ ...prev, status: 'pending' }))
     } catch (err) {
       alert('Failed to reopen invoice: ' + (err.message || 'Unknown error'))
