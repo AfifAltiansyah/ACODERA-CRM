@@ -4,6 +4,14 @@ import { Plus, X, Key, Copy, Check, Trash2, Clock, Upload } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('crm-auth-token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export function ApiKeysPage() {
   const [keys, setKeys] = useState([])
   const [loading, setLoading] = useState(true)
@@ -16,7 +24,7 @@ export function ApiKeysPage() {
 
   const fetchKeys = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api-keys`, { credentials: 'include' })
+      const res = await fetch(`${API_BASE}/api-keys`, { headers: getAuthHeaders(), credentials: 'include' })
       const data = await res.json()
       if (data.keys) setKeys(data.keys)
     } catch (err) { console.error(err) }
@@ -29,7 +37,7 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify(form),
       })
@@ -46,7 +54,7 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify({ name: importForm.name, customKey: importForm.customKey.trim(), rateLimit: importForm.rateLimit }),
       })
@@ -64,6 +72,7 @@ export function ApiKeysPage() {
     try {
       const res = await fetch(`${API_BASE}/api-keys/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
         credentials: 'include',
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }

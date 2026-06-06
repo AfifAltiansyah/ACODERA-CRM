@@ -4,6 +4,14 @@ import { Save, Copy, Check, Trash2, Globe } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('crm-auth-token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 const GATEWAYS = [
   { value: 'midtrans', label: 'Midtrans', fields: [
     { key: 'server_key', label: 'Server Key', type: 'password' },
@@ -29,7 +37,7 @@ export function GatewaySettingsPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_BASE}/gateway-config`, { credentials: 'include' })
+    fetch(`${API_BASE}/gateway-config`, { headers: getAuthHeaders(), credentials: 'include' })
       .then(r => r.json())
       .then(data => {
         setSelectedGateway(data.paymentGateway || '')
@@ -46,7 +54,7 @@ export function GatewaySettingsPage() {
     try {
       const res = await fetch(`${API_BASE}/gateway-config`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify({ paymentGateway: selectedGateway, gatewayConfig: config }),
       })
@@ -64,7 +72,7 @@ export function GatewaySettingsPage() {
   const handleDisable = async () => {
     if (!window.confirm('Disable payment gateway? This will remove your configuration.')) return
     try {
-      await fetch(`${API_BASE}/gateway-config`, { method: 'DELETE', credentials: 'include' })
+      await fetch(`${API_BASE}/gateway-config`, { method: 'DELETE', headers: getAuthHeaders(), credentials: 'include' })
       setSelectedGateway('')
       setConfig({})
       setWebhookToken(null)

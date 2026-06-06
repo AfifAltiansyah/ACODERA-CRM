@@ -5,6 +5,14 @@ import { useAuth } from '../../hooks/useAuth'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('crm-auth-token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export function AuditLogsPage() {
   const { user } = useAuth()
   const [logs, setLogs] = useState([])
@@ -21,6 +29,7 @@ export function AuditLogsPage() {
       if (actionFilter) params.set('action', actionFilter)
 
       const res = await fetch(`${API_BASE}/audit-logs?${params}`, {
+        headers: getAuthHeaders(),
         credentials: 'include',
       })
       const data = await res.json()

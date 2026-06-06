@@ -4,6 +4,14 @@ import { Plus, X, Users, Shield, Edit2, Trash2 } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('crm-auth-token')
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export function UserManagementPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -13,7 +21,7 @@ export function UserManagementPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(`${API_BASE}/users`, { credentials: 'include' })
+      const res = await fetch(`${API_BASE}/users`, { headers: getAuthHeaders(), credentials: 'include' })
       const data = await res.json()
       if (data.users) setUsers(data.users)
     } catch (err) { console.error(err) }
@@ -30,7 +38,7 @@ export function UserManagementPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         credentials: 'include',
         body: JSON.stringify(body),
       })
@@ -45,6 +53,7 @@ export function UserManagementPage() {
     try {
       const res = await fetch(`${API_BASE}/users/${id}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
         credentials: 'include',
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error) }
