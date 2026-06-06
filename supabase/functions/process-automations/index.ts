@@ -110,6 +110,17 @@ serve(async (req) => {
 
               if (invoices && invoices.length > 0) {
                 inv = invoices[0]
+                if (inv.ticket_id) {
+                  try {
+                    const { data: tk } = await supabase
+                      .from('tickets').select('title, abbreviation').eq('id', inv.ticket_id).single()
+                    if (tk) {
+                      inv.ticket_title = inv.ticket_title || tk.title || ''
+                      inv.item_name = inv.item_name || tk.title || ''
+                      inv.itemCode = inv.itemCode || tk.abbreviation || ''
+                    }
+                  } catch { /* ignore */ }
+                }
                 if (inv.branch) await refreshPaymentOptions(inv.branch)
                 const invoiceTemplate = await fetchInvoiceTemplate(supabase, inv.branch)
 
@@ -178,9 +189,21 @@ serve(async (req) => {
 
       if (pendingInvoices && pendingInvoices.length > 0) {
         const seen = new Set<string>()
-        for (const inv of pendingInvoices) {
+          for (const inv of pendingInvoices) {
           if (!inv.buyer_email || seen.has(inv.buyer_email)) continue
           seen.add(inv.buyer_email)
+
+          if (inv.ticket_id) {
+            try {
+              const { data: tk } = await supabase
+                .from('tickets').select('title, abbreviation').eq('id', inv.ticket_id).single()
+              if (tk) {
+                inv.ticket_title = inv.ticket_title || tk.title || ''
+                inv.item_name = inv.item_name || tk.title || ''
+                inv.itemCode = inv.itemCode || tk.abbreviation || ''
+              }
+            } catch { /* ignore */ }
+          }
 
           for (const auto of overdueAutos) {
             const { data: recent } = await supabase
@@ -255,6 +278,18 @@ serve(async (req) => {
         for (const inv of recentInvoices) {
           if (!inv.buyer_email || seen.has(inv.buyer_email)) continue
           seen.add(inv.buyer_email)
+
+          if (inv.ticket_id) {
+            try {
+              const { data: tk } = await supabase
+                .from('tickets').select('title, abbreviation').eq('id', inv.ticket_id).single()
+              if (tk) {
+                inv.ticket_title = inv.ticket_title || tk.title || ''
+                inv.item_name = inv.item_name || tk.title || ''
+                inv.itemCode = inv.itemCode || tk.abbreviation || ''
+              }
+            } catch { /* ignore */ }
+          }
 
           for (const auto of invoiceAutos) {
             const { data: recent } = await supabase

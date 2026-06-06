@@ -183,6 +183,25 @@ serve(async (req) => {
           }
 
           if (txnData) {
+            txnData.item_name = extraData.itemName || extraData.item_name || txnData.item_name || ''
+            txnData.itemCode = extraData.itemCode || txnData.itemCode || txnData.unique_code || ''
+            txnData.ticket_title = extraData.ticket_title || txnData.ticket_title || ''
+
+            if (txnData.ticket_id) {
+              try {
+                const { data: tk } = await supabase
+                  .from('tickets')
+                  .select('title, abbreviation')
+                  .eq('id', txnData.ticket_id)
+                  .single()
+                if (tk) {
+                  txnData.ticket_title = txnData.ticket_title || tk.title || ''
+                  txnData.item_name = txnData.item_name || tk.title || ''
+                  txnData.itemCode = txnData.itemCode || tk.abbreviation || ''
+                }
+              } catch { /* ignore */ }
+            }
+
             if (txnData.branch) {
               await refreshPaymentOptions(txnData.branch)
             }
