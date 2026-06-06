@@ -555,11 +555,12 @@ function groupInvoices(data) {
     const first = rows[0]
     const dt = first.purchased_at ? new Date(first.purchased_at) : new Date(first.created_at)
     const ticketTitle = first.ticket_title || ''
+    const allCodes = rows.flatMap(r => Array(Number(r.quantity) || 1).fill(r.unique_code))
     return {
       id: first.transaction_id,
       transactionId: first.transaction_id,
       dateTime: dt.toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' }),
-      itemCode: rows.map(r => r.unique_code).join(', '),
+      itemCode: allCodes.join(', '),
       itemName: ticketTitle,
       quantity: rows.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
       pricePerUnit: Number(first.price_per_unit),
@@ -572,7 +573,7 @@ function groupInvoices(data) {
       status: first.status,
       expiresAt: first.expires_at || '',
       isTicketInvoice: !!first.ticket_id,
-      uniqueCodes: rows.map(r => r.unique_code),
+      uniqueCodes: allCodes,
       ticketId: first.ticket_id ? String(first.ticket_id) : '',
     }
   })
