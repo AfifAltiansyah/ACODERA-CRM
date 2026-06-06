@@ -841,6 +841,29 @@ export async function handleExternal(req: Request, method: string, path: string)
           insertData.branch = user!.branch_id
         }
       }
+
+      if (entity === 'transactions' && Number(insertData.quantity) > 1) {
+        const qty = Number(insertData.quantity)
+        const baseCode = String(insertData.unique_code || '')
+        const rows = []
+        for (let i = 0; i < qty; i++) {
+          rows.push({
+            ...insertData,
+            quantity: 1,
+            total_amount: Number(insertData.price_per_unit) || Number(insertData.total_amount) / qty,
+            unique_code: baseCode ? `${baseCode}-${String(i + 1).padStart(3, '0')}` : `TKT-EXT-${Date.now()}-${String(i + 1).padStart(3, '0')}`,
+            barcode: insertData.barcode || String(Math.floor(Math.random() * 9999999999999)).padStart(13, '0'),
+          })
+        }
+        const { data: created, error: createErr } = await supabase
+          .from(entity)
+          .insert(rows)
+          .select()
+        if (createErr) throw createErr
+        await audit(`${method.toLowerCase()}.create`, String(created?.[0]?.id))
+        return respond({ data: created, quantity: qty }, 201)
+      }
+
       const { data: created, error: createErr } = await supabase
         .from(entity)
         .insert(insertData)

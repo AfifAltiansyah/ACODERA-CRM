@@ -301,7 +301,7 @@ export function InvoiceDetailPage() {
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center gap-3 mb-4">
             <Ticket size={18} className="text-slate-400" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ticket Details ({invoice.uniqueCodes.length})</h3>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ticket Details ({invoice.quantity})</h3>
           </div>
           <div className="space-y-2">
             {invoice.uniqueCodes.map((code, idx) => (
