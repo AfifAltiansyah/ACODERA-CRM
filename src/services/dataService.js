@@ -1210,5 +1210,33 @@ export async function updateTransactionStatus(id, newStatus) {
     })
   }
 
+  if (newStatus === 'cancelled' && oldStatus !== 'cancelled') {
+    triggerAutomationEvent('invoice.cancelled', {
+      contact_email: current.buyer_email,
+      contact_name: current.buyer_name,
+      data: {
+        invoice_id: current.transaction_id,
+        amount: current.total_amount,
+        buyer_email: current.buyer_email,
+        buyer_name: current.buyer_name,
+        buyer_phone: current.buyer_phone || '',
+        itemName: current.item_name || current.unique_code || '',
+        quantity: String(current.quantity || 1),
+        pricePerUnit: String(Number(current.price_per_unit)),
+        totalAmount: String(Number(current.total_amount)),
+        transaction_id: current.transaction_id,
+        status: 'cancelled',
+        purchased_at: current.purchased_at,
+        branch: current.branch,
+      },
+    })
+    insertNotification({
+      type: 'invoice', title: 'Invoice cancelled',
+      message: `${current.transaction_id} — Rp${(Number(current.total_amount) || 0).toLocaleString()}`,
+      entityId: current.transaction_id,
+      link: `/dashboard/invoicing/${current.transaction_id}`,
+    })
+  }
+
   return formatTransaction(data)
 }

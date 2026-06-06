@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Trash2, X, QrCode, Wallet, Landmark, Eye, Download, FileImage, FileText, CreditCard, Copy, Check, Timer as TimerIcon } from 'lucide-react'
 import html2canvas from 'html2canvas'
-import { getInvoices, deleteInvoice, getContacts, getAvailableTickets, getExpiredInvoices } from '../services/dataService'
+import { getInvoices, deleteInvoice, getContacts, getAvailableTickets, getExpiredInvoices, updateTransactionStatus } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { DEFAULT_TEMPLATE, loadTemplate } from './InvoiceTemplate'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
@@ -326,6 +326,19 @@ export function InvoicingPage() {
     }
   }
 
+  const handleStatusChange = async (id, newStatus) => {
+    if (newStatus === getCurrentStatus(id)) return
+    if (newStatus === 'cancelled' && !window.confirm('Cancel this invoice? This cannot be undone.')) return
+    try {
+      await updateTransactionStatus(Number(id), newStatus)
+      refresh()
+    } catch (err) {
+      alert('Failed to update status: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  const getCurrentStatus = (id) => invoices.find(i => i.id === id)?.status
+
   const openPreview = (inv) => {
     setPreviewInvoice(inv)
     setPreviewOpen(true)
@@ -481,8 +494,20 @@ export function InvoicingPage() {
                       </button>
                     )}
                   </td>
-                  <td className="px-4 py-3">
-                    {getStatusBadge(inv.status)}
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={inv.status}
+                      onChange={(e) => handleStatusChange(inv.id, e.target.value)}
+                      className={`text-xs font-medium rounded-full px-2.5 py-1 border-0 cursor-pointer appearance-none outline-none ${
+                        inv.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
+                        inv.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
+                      }`}
+                    >
+                      {STATUS_OPTIONS.map(s => (
+                        <option key={s.value} value={s.value}>{s.label}</option>
+                      ))}
+                    </select>
                     {inv.status === 'pending' && <CountdownTimer expiresAt={inv.expiresAt} />}
                   </td>
                   <td className="px-4 py-3 text-right">

@@ -94,6 +94,26 @@ export function InvoiceDetailPage() {
     }
   }
 
+  const handleMarkCancelled = async () => {
+    if (!window.confirm('Cancel this invoice? This cannot be undone.')) return
+    try {
+      await updateTransactionStatus(parseInt(invoice.id), 'cancelled')
+      setInvoice(prev => ({ ...prev, status: 'cancelled' }))
+    } catch (err) {
+      alert('Failed to cancel invoice: ' + (err.message || 'Unknown error'))
+    }
+  }
+
+  const handleMarkPending = async () => {
+    if (!window.confirm('Reopen this invoice? It will be set back to pending status.')) return
+    try {
+      await updateTransactionStatus(parseInt(invoice.id), 'pending')
+      setInvoice(prev => ({ ...prev, status: 'pending' }))
+    } catch (err) {
+      alert('Failed to reopen invoice: ' + (err.message || 'Unknown error'))
+    }
+  }
+
   const getPaymentInfo = () => {
     const company = template.companyName || 'Acodera CRM'
     if (invoice.isTicketInvoice) {
@@ -160,12 +180,32 @@ export function InvoiceDetailPage() {
                 <span>{timeLeft}</span>
               </div>
             )}
-            {invoice.status === 'pending' && (
-              <button onClick={handleMarkPaid} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors">
-                <CheckCircle size={14} />
-                Mark as Paid
-              </button>
-            )}
+            <div className="flex items-center gap-1.5">
+              {invoice.status === 'pending' && (
+                <>
+                  <button onClick={handleMarkPaid} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors">
+                    <CheckCircle size={14} />
+                    Mark as Paid
+                  </button>
+                  <button onClick={handleMarkCancelled} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors">
+                    <Ban size={14} />
+                    Cancel
+                  </button>
+                </>
+              )}
+              {invoice.status === 'paid' && (
+                <button onClick={handleMarkCancelled} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors">
+                  <Ban size={14} />
+                  Mark as Cancelled
+                </button>
+              )}
+              {invoice.status === 'cancelled' && (
+                <button onClick={handleMarkPending} className="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium bg-amber-600 text-white hover:bg-amber-700 transition-colors">
+                  <Clock size={14} />
+                  Reopen
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
