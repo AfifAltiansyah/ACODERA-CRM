@@ -231,6 +231,7 @@ export function generateInvoiceReminderHtml(
 
 export async function generateInvoicePdf(inv: any, template: any, branchId?: string) {
   try {
+    console.log('[PDF] Starting generation for', inv?.transaction_id || 'unknown', 'branch:', branchId)
     const tpl = resolveTemplate(template)
     const cur = tpl.currencySymbol
     const taxRate = tpl.taxRate
@@ -249,11 +250,26 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       hour: '2-digit', minute: '2-digit', hour12: false,
     })
 
-    const pdfDoc = await PDFDocument.create()
+    console.log('[PDF] Creating document...')
+    let pdfDoc
+    try {
+      pdfDoc = await PDFDocument.create()
+    } catch (e) {
+      console.error('[PDF] PDFDocument.create() failed:', e instanceof Error ? e.message : String(e))
+      return null
+    }
+    
+    let font, fontBold
+    try {
+      font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+      fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+      console.log('[PDF] Fonts embedded successfully')
+    } catch (e) {
+      console.error('[PDF] Font embedding failed:', e instanceof Error ? e.message : String(e))
+      return null
+    }
     const page = pdfDoc.addPage([595.28, 841.89])
     const { width, height } = page.getSize()
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
     const margin = 56
 
     function drawText(text: string, x: number, y: number, fnt: any, size: number, color: any) {
@@ -388,13 +404,16 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const footerLine = `${tpl.footerText} | ${tpl.companyName} | ${tpl.website}`
     drawText(footerLine, (width - font.widthOfTextAtSize(footerLine, 9)) / 2, yPos + 6, font, 9, rgb(0.58, 0.58, 0.62))
 
+    console.log('[PDF] Saving document...')
     const pdfBytes = await pdfDoc.save()
     const bytes = new Uint8Array(pdfBytes)
     let binary = ''
     for (let i = 0; i < bytes.length; i++) {
       binary += String.fromCharCode(bytes[i])
     }
-    return btoa(binary)
+    const base64 = btoa(binary)
+    console.log('[PDF] Generated successfully, size:', base64.length)
+    return base64
   } catch (err) {
     console.error('[PDF] Generation failed:', err instanceof Error ? err.message : String(err))
     if (err instanceof Error && err.stack) console.error('[PDF] Stack:', err.stack)
