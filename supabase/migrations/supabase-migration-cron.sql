@@ -19,7 +19,7 @@ SELECT cron.schedule(
     url := 'https://rthxlprgtfuhntpcdhsh.supabase.co/functions/v1/process-automations',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'apikey', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0aHhscHJndGZ1aG50cGNkaHNoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3ODM0OTM1NSwiZXhwIjoyMDkzOTI1MzU1fQ.4CXw_d9a0XZgtRUnpiyua2OIiFhSxxeaMsP2h10Nxkk'
+      'apikey', 'b05d0ae8c2e63e145a706c026dd6149f20353d6986a83cd40d4637a7fd1f99f2'
     ),
     body := '{}'::jsonb
   );

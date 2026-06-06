@@ -18,6 +18,7 @@ const corsHeaders = {
 }
 
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
+const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET')
 
 function corsResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -39,7 +40,7 @@ serve(async (req) => {
     }
 
     const apiKey = req.headers.get('apikey')
-    if (apiKey !== supabaseKey) {
+    if (apiKey !== supabaseKey && apiKey !== AUTOMATION_SECRET) {
       return corsResponse({ success: false, error: 'Unauthorized' }, 401)
     }
 

@@ -238,11 +238,11 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const taxAmount = (inv.total_amount || 0) * (taxRate / 100)
     const totalWithTax = (inv.total_amount || 0) + taxAmount
     const accentHex = tpl.accentColor
-    const accent = {
-      r: parseInt(accentHex.slice(1, 3), 16) / 255,
-      g: parseInt(accentHex.slice(3, 5), 16) / 255,
-      b: parseInt(accentHex.slice(5, 7), 16) / 255,
-    }
+    const accent = rgb(
+      parseInt(accentHex.slice(1, 3), 16) / 255,
+      parseInt(accentHex.slice(3, 5), 16) / 255,
+      parseInt(accentHex.slice(5, 7), 16) / 255,
+    )
     const customerName = inv.buyer_name || 'Walk-in Customer'
     const dt = inv.purchased_at ? new Date(inv.purchased_at) : new Date(inv.created_at)
     const dateTime = dt.toLocaleString('en-US', {
