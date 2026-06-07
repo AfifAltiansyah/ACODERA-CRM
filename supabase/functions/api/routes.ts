@@ -853,6 +853,51 @@ export async function handleExternal(req: Request, method: string, path: string)
   }
 
   try {
+    if (entity === 'checkin' && method === 'POST') {
+      const uniqueCode = body.unique_code as string
+      if (!uniqueCode) {
+        return respond({ error: 'Unique code is required' }, 400)
+      }
+
+      const filter = tenantWhere()
+      let q = supabase.from('transactions').select('*, tickets!inner(title)').eq('unique_code', uniqueCode.trim())
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { data: tx, error: findErr } = await q.single()
+
+      if (findErr || !tx) {
+        return respond({ error: 'Invalid unique code' }, 404)
+      }
+      if (tx.status === 'cancelled') {
+        return respond({ error: 'Registration cancelled' }, 400)
+      }
+      if (tx.status === 'checked_in') {
+        return respond({ error: 'Already checked in', checked_in_at: tx.checked_in_at }, 400)
+      }
+
+      const { data: updated, error: updateErr } = await supabase
+        .from('transactions')
+        .update({ status: 'checked_in', checked_in_at: new Date().toISOString() })
+        .eq('id', tx.id)
+        .select('transaction_id, buyer_name, buyer_email, status, checked_in_at')
+        .single()
+
+      if (updateErr || !updated) {
+        return respond({ error: 'Failed to check in' }, 500)
+      }
+
+      return respond({
+        success: true,
+        transaction: {
+          transaction_id: updated.transaction_id,
+          buyer_name: updated.buyer_name,
+          buyer_email: updated.buyer_email,
+          ticket: (tx as any).tickets?.title || 'Unknown',
+          status: updated.status,
+          checked_in_at: updated.checked_in_at,
+        },
+      })
+    }
+
     if (method === 'GET' && !id) {
       const filter = tenantWhere()
 
