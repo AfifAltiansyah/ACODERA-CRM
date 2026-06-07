@@ -206,15 +206,17 @@ serve(async (req) => {
           }
 
           for (const auto of overdueAutos) {
-            const { data: recent } = await supabase
+            const { data: recentlySent } = await supabase
               .from('automation_logs')
               .select('id')
-              .eq('automation_id', auto.id)
               .eq('contact_email', inv.buyer_email)
               .eq('status', 'sent')
               .gte('sent_at', new Date(Date.now() - 86400000).toISOString())
               .limit(1)
-            if (recent && recent.length > 0) continue
+            if (recentlySent && recentlySent.length > 0) {
+              console.log('[process-automations] Overdue dedup skip:', inv.buyer_email)
+              continue
+            }
 
             let invoiceTemplate: any = null
             if (inv.branch) {
@@ -292,15 +294,17 @@ serve(async (req) => {
           }
 
           for (const auto of invoiceAutos) {
-            const { data: recent } = await supabase
+            const { data: recentlySent } = await supabase
               .from('automation_logs')
               .select('id')
-              .eq('automation_id', auto.id)
               .eq('contact_email', inv.buyer_email)
               .eq('status', 'sent')
               .gte('sent_at', new Date(Date.now() - 86400000).toISOString())
               .limit(1)
-            if (recent && recent.length > 0) continue
+            if (recentlySent && recentlySent.length > 0) {
+              console.log('[process-automations] Dedup skip:', inv.buyer_email, '- already received invoice email in last 24h')
+              continue
+            }
 
             let invoiceTemplate: any = null
             if (inv.branch) {

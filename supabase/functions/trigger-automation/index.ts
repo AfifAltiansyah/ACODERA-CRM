@@ -254,6 +254,26 @@ serve(async (req) => {
       if (isEmail) {
         let sent = 0
         let failed = 0
+
+        // Global dedup: skip recipients already emailed in last 24h
+        if (recipients.length > 0) {
+          const { data: existing } = await supabase
+            .from('automation_logs')
+            .select('contact_email')
+            .in('contact_email', recipients)
+            .eq('status', 'sent')
+            .gte('created_at', new Date(Date.now() - 86400000).toISOString())
+
+          if (existing && existing.length > 0) {
+            const sentEmails = new Set(existing.map((e: any) => e.contact_email))
+            const before = recipients.length
+            recipients = recipients.filter(e => !sentEmails.has(e))
+            if (recipients.length < before) {
+              console.log('[trigger-automation] Dedup: filtered', before - recipients.length, 'already-sent recipients')
+            }
+          }
+        }
+
         for (const email of recipients) {
           try {
             // Prefer server-generated PDF, then frontend attachment, then pdf_attachment
