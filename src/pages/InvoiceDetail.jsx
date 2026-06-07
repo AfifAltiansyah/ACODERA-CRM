@@ -337,22 +337,24 @@ export function InvoiceDetailPage() {
         </div>
       )}
 
-      {invoice.isTicketInvoice && invoice.uniqueCodes && invoice.uniqueCodes.length > 0 && (
+      {invoice.isTicketInvoice && invoice.ticketDetails && invoice.ticketDetails.length > 0 && (
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
           <div className="flex items-center gap-3 mb-4">
             <Ticket size={18} className="text-slate-400" />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Ticket Details ({invoice.quantity})</h3>
           </div>
           <div className="space-y-2">
-            {invoice.uniqueCodes.map((code, idx) => (
-              <motion.div key={idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-4">
+            {invoice.ticketDetails.map((ticket, idx) => (
+              <motion.div key={ticket.uniqueCode || idx} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }} className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-700/30 p-4">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{code}</span>
-                    <button onClick={() => copyToClipboard(code, `code-${idx}`)} className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">{ticket.uniqueCode}</span>
+                    <button onClick={() => copyToClipboard(ticket.uniqueCode, `code-${idx}`)} className="p-0.5 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
                       {copiedField === `code-${idx}` ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
                     </button>
                   </div>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-mono mt-0.5">BC: {ticket.barcode || '—'}</p>
+                  {ticket.buyerName && <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{ticket.buyerName} · {ticket.buyerEmail}</p>}
                 </div>
                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ml-2 ${invoice.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : invoice.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'}`}>
                   {invoice.status === 'paid' ? 'Paid' : invoice.status === 'cancelled' ? 'Cancelled' : 'Pending'}

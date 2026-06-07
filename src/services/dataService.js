@@ -583,7 +583,14 @@ function groupInvoices(data) {
     const first = rows[0]
     const dt = first.purchased_at ? new Date(first.purchased_at) : new Date(first.created_at)
     const ticketTitle = first.ticket_title || ''
-    const allCodes = rows.flatMap(r => Array(Number(r.quantity) || 1).fill(r.unique_code))
+    const allCodes = rows.map(r => r.unique_code)
+    const ticketDetails = rows.map(r => ({
+      uniqueCode: r.unique_code,
+      barcode: r.barcode || '',
+      buyerName: r.buyer_name || '',
+      buyerEmail: r.buyer_email || '',
+      buyerPhone: r.buyer_phone || '',
+    }))
     return {
       id: first.transaction_id,
       transactionId: first.transaction_id,
@@ -602,6 +609,7 @@ function groupInvoices(data) {
       expiresAt: first.expires_at || '',
       isTicketInvoice: !!first.ticket_id,
       uniqueCodes: allCodes,
+      ticketDetails,
       ticketId: first.ticket_id ? String(first.ticket_id) : '',
     }
   })
@@ -765,9 +773,8 @@ export async function getAvailableTicketInstances() {
 }
 
 export async function getTicketInstances(ticketId) {
-  const { data, error } = await filterBranch(
-    supabase.from('transactions').select('*').eq('ticket_id', Number(ticketId)).order('unique_code', { ascending: true })
-  )
+  const { data, error } = await supabase
+    .from('transactions').select('*').eq('ticket_id', Number(ticketId)).order('unique_code', { ascending: true })
 
   if (error) {
     console.error('getTicketInstances error:', error)
@@ -962,9 +969,8 @@ export async function addInvoice(invoice) {
 
 export async function deleteInvoice(transactionId) {
   // Fetch rows first to get unique_codes
-  const { data: rows, error: fetchError } = await filterBranch(
-    supabase.from('transactions').select('id, unique_code').eq('transaction_id', transactionId)
-  )
+  const { data: rows, error: fetchError } = await supabase
+    .from('transactions').select('id, unique_code').eq('transaction_id', transactionId)
 
   if (fetchError) {
     console.error('deleteInvoice fetch error:', fetchError)
@@ -1222,9 +1228,8 @@ async function insertNotification({ type, title, message, entityId, link }) {
 }
 
 export async function updateTransactionStatus(transactionId, newStatus) {
-  const { data: rows, error: fetchError } = await filterBranch(
-    supabase.from('transactions').select('*').eq('transaction_id', transactionId)
-  )
+  const { data: rows, error: fetchError } = await supabase
+    .from('transactions').select('*').eq('transaction_id', transactionId)
 
   if (fetchError) throw fetchError
   if (!rows || rows.length === 0) throw new Error('Invoice not found')
@@ -1232,9 +1237,8 @@ export async function updateTransactionStatus(transactionId, newStatus) {
   const current = rows[0]
   const oldStatus = current.status
 
-  const { error } = await filterBranch(
-    supabase.from('transactions').update({ status: newStatus }).eq('transaction_id', transactionId)
-  )
+  const { error } = await supabase
+    .from('transactions').update({ status: newStatus }).eq('transaction_id', transactionId)
 
   if (error) throw error
 
