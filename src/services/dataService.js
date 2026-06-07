@@ -864,6 +864,7 @@ export async function addInvoice(invoice) {
           buyer_name: invoice.customerName,
           buyer_phone: invoice.customerPhone || '',
           itemName: invoice.itemName || '',
+          itemCode: available.map(i => i.unique_code).join(', '),
           quantity: String(qty),
           pricePerUnit: String(Number(invoice.pricePerUnit)),
           totalAmount: String(Number(invoice.pricePerUnit) * qty),

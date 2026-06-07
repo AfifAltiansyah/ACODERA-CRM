@@ -100,7 +100,7 @@ export function generateInvoiceHtml(
       <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>
     </tr>
     <tr>
-      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${itemName}</td>
+      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${itemName}<br/><span style="font-size:10px;color:#94a3b8;font-family:monospace;">${itemCode}</span></td>
       <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${txn.quantity || 1}</td>
       <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.price_per_unit || txn.total_amount || 0).toLocaleString()}</td>
       <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
@@ -204,6 +204,7 @@ export function generateInvoiceReminderHtml(
     <tr><td style="background:${accent};padding:10px 16px;" colspan="2"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;color:#fff;">Invoice Details</p></td></tr>
     <tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;width:140px;">Invoice ID</td><td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.transaction_id || ''}</td></tr>
     <tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Date</td><td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'2-digit' })}</td></tr>
+    <tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Code</td><td style="padding:10px 16px;font-size:11px;font-weight:600;color:#0f172a;font-family:monospace;border-bottom:1px solid #e2e8f0;">${itemCode}</td></tr>
     <tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Quantity</td><td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${txn.quantity || 1}</td></tr>
     <tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Subtotal</td><td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td></tr>
     ${taxRate > 0 ? `<tr><td style="padding:10px 16px;font-size:13px;color:#64748b;border-bottom:1px solid #e2e8f0;">Tax (${taxRate}%)</td><td style="padding:10px 16px;font-size:13px;font-weight:600;color:#0f172a;border-bottom:1px solid #e2e8f0;">${cur}${taxAmount.toLocaleString()}</td></tr>` : ''}
