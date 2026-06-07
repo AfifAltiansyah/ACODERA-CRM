@@ -970,17 +970,14 @@ export async function handleExternal(req: Request, method: string, path: string)
 
         const fieldMeta: Record<string, unknown> = {}
         for (const key of Object.keys(insertData)) {
-          if (!knownFields.includes(key) && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+          if (!knownFields.includes(key) && key !== 'id' && key !== 'created_at' && key !== 'updated_at' && key !== 'metadata') {
             fieldMeta[key] = insertData[key]
             delete insertData[key]
           }
         }
 
-        const existingMeta = (insertData.metadata && typeof insertData.metadata === 'object')
-          ? insertData.metadata as Record<string, unknown>
-          : {}
-        insertData.metadata = { ...existingMeta, ...proofMeta, ...fieldMeta }
-        if (Object.keys(insertData.metadata as Record<string, unknown>).length === 0) {
+        insertData.metadata = { ...proofMeta, ...fieldMeta }
+        if (Object.keys(insertData.metadata).length === 0) {
           delete insertData.metadata
         }
       }

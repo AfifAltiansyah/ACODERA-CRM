@@ -12,6 +12,12 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled' },
 ]
 
+function getProofUrl(tx) {
+  if (tx.metadata?.proof_url) return tx.metadata.proof_url
+  if (tx.metadata?.metadata?.proof_url) return tx.metadata.metadata.proof_url
+  return null
+}
+
 export function TransactionsPage() {
   const { formatCurrency: fc } = useCurrencyFormatter()
   const [transactions, setTransactions] = useState([])
@@ -167,8 +173,8 @@ export function TransactionsPage() {
                   {t.purchased_at ? new Date(t.purchased_at).toLocaleString() : '—'}
                 </td>
                 <td className="px-4 py-3 hidden xl:table-cell text-center">
-                  {t.metadata?.proof_url ? (
-                    <img src={t.metadata.proof_url} alt="Proof" className="w-10 h-10 rounded object-cover border border-slate-200 mx-auto cursor-pointer" onClick={e => { e.stopPropagation(); setDetailOpen(t) }} title="Click to view details" />
+                  {getProofUrl(t) ? (
+                    <img src={getProofUrl(t)} alt="Proof" className="w-10 h-10 rounded object-cover border border-slate-200 mx-auto cursor-pointer hover:scale-150 transition-transform" onClick={e => { e.stopPropagation(); setDetailOpen(t) }} title="Click for full image" />
                   ) : '—'}
                 </td>
                 {Array.from(allMetaKeys).slice(0, 1).map(k => (
@@ -233,28 +239,38 @@ export function TransactionsPage() {
                   </div>
                 </div>
 
-                {detailOpen.metadata && Object.keys(detailOpen.metadata).length > 0 && (
-                  <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
-                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Metadata</p>
-                    <div className="space-y-2">
-                      {Object.entries(detailOpen.metadata).map(([key, value]) => {
-                        if (key === 'proof_url') return (
-                          <div key={key}>
-                            <p className="text-xs text-slate-400 uppercase mb-1">Proof of Transfer</p>
-                            <img src={value} alt="Proof" className="w-full rounded-lg border border-slate-200" style={{ maxHeight: 300, objectFit: 'contain' }} />
-                          </div>
-                        )
-                        if (key === 'proof_name') return null
-                        return (
-                          <div key={key} className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-700/50">
-                            <span className="text-xs text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="text-xs font-medium text-slate-900 dark:text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
-                          </div>
-                        )
-                      })}
+                {(() => {
+                  const meta = detailOpen.metadata || {}
+                  const nested = meta.metadata || {}
+                  const allEntries = { ...meta, ...nested }
+                  delete allEntries.metadata
+                  const keys = Object.keys(allEntries)
+                  if (keys.length === 0) return null
+                  return (
+                    <div className="border-t border-slate-100 dark:border-slate-700 pt-4">
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-2">Metadata</p>
+                      <div className="space-y-2">
+                        {keys.map(key => {
+                          const value = allEntries[key]
+                          if (key === 'proof_url' && typeof value === 'string' && value.startsWith('http')) return (
+                            <div key={key}>
+                              <p className="text-xs text-slate-400 uppercase mb-1">Proof of Transfer</p>
+                              <img src={value} alt="Proof" className="w-full rounded-lg border border-slate-200 cursor-pointer" style={{ maxHeight: 300, objectFit: 'contain' }}
+                                onClick={() => window.open(value, '_blank')} />
+                            </div>
+                          )
+                          if (key === 'proof_name') return null
+                          return (
+                            <div key={key} className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-700/50">
+                              <span className="text-xs text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
+                              <span className="text-xs font-medium text-slate-900 dark:text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 <div className="border-t border-slate-100 dark:border-slate-700 pt-4 flex gap-2">
                   {detailOpen.status !== 'paid' && (
