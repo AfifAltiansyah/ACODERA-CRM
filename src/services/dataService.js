@@ -447,10 +447,13 @@ export async function getTickets() {
   }
 
   return data.map(t => {
-    const soldCount = (t.instances || []).filter(i => i.status !== 'available').length
+    const instances = t.instances || []
+    const soldCount = instances.filter(i => i.status !== 'available').length
+    const availableCount = instances.filter(i => i.status === 'available').length
     return {
       ...formatTicket(t),
       soldCount,
+      availableCount,
     }
   })
 }

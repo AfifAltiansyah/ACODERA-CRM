@@ -69,6 +69,7 @@ export function TicketsPage() {
 
   const totalTickets = tickets.reduce((s, t) => s + (t.quantity || 0), 0)
   const totalSold = tickets.reduce((s, t) => s + (t.soldCount || 0), 0)
+  const totalAvailable = tickets.reduce((s, t) => s + (t.availableCount || 0), 0)
 
   if (loading) {
     return (
@@ -110,7 +111,7 @@ export function TicketsPage() {
             <Circle size={16} />
             <p className="text-sm">Available</p>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalTickets - totalSold}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{totalAvailable}</p>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
           <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mb-1">
