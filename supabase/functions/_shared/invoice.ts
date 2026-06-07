@@ -39,7 +39,7 @@ export function generateInvoiceHtml(
   const taxAmount = (txn.total_amount || 0) * (taxRate / 100)
   const totalWithTax = (txn.total_amount || 0) + taxAmount
   const statusColor = statusLabel === 'Paid' ? '#16a34a' : statusLabel === 'Cancelled' ? '#dc2626' : '#ca8a04'
-  const itemCode = txn.unique_code || txn.transaction_id || '-'
+  const itemCode = txn.itemCode || txn.unique_code || txn.transaction_id || '-'
   const itemName = txn.item_name || txn.ticket_title || 'Invoice Item'
 
   let paymentInfoHtml = ''
@@ -156,7 +156,7 @@ export function generateInvoiceReminderHtml(
   const cur = tpl.currencySymbol
   const customerName = txn.buyer_name || 'Customer'
   const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName, branchId)
-  const itemName = txn.unique_code || txn.transaction_id || 'Invoice Item'
+  const itemName = txn.itemCode || txn.unique_code || txn.transaction_id || 'Invoice Item'
   const taxAmount = (txn.total_amount || 0) * (taxRate / 100)
   const totalWithTax = (txn.total_amount || 0) + taxAmount
 
@@ -372,7 +372,7 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       yPos -= 36
     }
 
-    const itemCode = inv.unique_code || '-'
+    const itemCode = inv.itemCode || inv.unique_code || '-'
     const qty = inv.quantity || 1
     const priceText = `${cur}${Number(inv.price_per_unit || 0).toLocaleString()}`
     const totalText = `${cur}${Number(inv.total_amount || 0).toLocaleString()}`
@@ -456,7 +456,7 @@ export function replaceTemplateVars(
     '{{paymentMethod}}': data?.payment_method || '—',
     '{{paymentDetail}}': data?.payment_detail || '—',
     '{{buyer_phone}}': data?.buyer_phone || '—',
-    '{{itemCode}}': data?.unique_code || '—',
+    '{{itemCode}}': data?.itemCode || data?.unique_code || '—',
     '{{taxAmount}}': tpl?.taxRate ? String(Number(data?.total_amount || 0) * (Number(tpl.taxRate) / 100)) : '0',
     '{{totalWithTax}}': tpl?.taxRate
       ? String(Number(data?.total_amount || 0) + Number(data?.total_amount || 0) * (Number(tpl.taxRate) / 100))

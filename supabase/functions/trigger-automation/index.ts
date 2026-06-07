@@ -165,14 +165,20 @@ serve(async (req) => {
           let invoiceId = extraData.invoice_id as string | undefined
 
           if (invoiceId) {
-            const { data: txns } = await supabase
+            const { data: rows } = await supabase
               .from('transactions')
               .select('*')
               .eq('transaction_id', String(invoiceId))
-              .limit(1)
+              .order('unique_code', { ascending: true })
 
-            if (txns && txns.length > 0) {
-              txnData = txns[0]
+            if (rows && rows.length > 0) {
+              txnData = { ...rows[0] }
+              // Aggregate from all rows for multi-ticket invoices
+              txnData.quantity = rows.length
+              txnData.total_amount = rows.reduce((sum: number, r: any) => sum + Number(r.total_amount || 0), 0)
+              txnData.itemCode = rows.map((r: any) => r.unique_code).join(', ')
+              txnData.unique_code = rows[0].unique_code
+              txnData.price_per_unit = Number(rows[0].price_per_unit || 0)
             }
           }
 
@@ -191,10 +197,12 @@ serve(async (req) => {
 
           if (txnData) {
             txnData.item_name = extraData.itemName || extraData.item_name || txnData.item_name || ''
-            txnData.itemCode = extraData.itemCode || txnData.itemCode || txnData.unique_code || ''
             txnData.ticket_title = extraData.ticket_title || txnData.ticket_title || ''
+            // extraData overrides the DB aggregation for non-ticket invoices
             if (extraData.quantity != null) txnData.quantity = Number(extraData.quantity)
             if (extraData.totalAmount != null) txnData.total_amount = Number(extraData.totalAmount)
+            if (extraData.pricePerUnit != null) txnData.price_per_unit = Number(extraData.pricePerUnit)
+            if (extraData.itemCode) txnData.itemCode = extraData.itemCode
             if (extraData.transaction_id) txnData.transaction_id = String(extraData.transaction_id)
 
             if (txnData.ticket_id) {

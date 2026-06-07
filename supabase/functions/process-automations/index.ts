@@ -174,6 +174,25 @@ serve(async (req) => {
       }
     }
 
+    // Helper: aggregate all rows for a ticket invoice into invoice-level data
+    async function aggregateInvoice(supabase: any, inv: any) {
+      if (!inv.ticket_id || !inv.transaction_id) return inv
+      const { data: siblings } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('transaction_id', inv.transaction_id)
+        .order('unique_code', { ascending: true })
+      if (!siblings || siblings.length <= 1) return inv
+      // Merge: quantity = row count, total = sum, codes = joined
+      return {
+        ...inv,
+        quantity: siblings.length,
+        total_amount: siblings.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0),
+        itemCode: siblings.map((r: any) => r.unique_code).join(', '),
+        price_per_unit: Number(inv.price_per_unit || 0),
+      }
+    }
+
     // ── 2. Invoice overdue automations (dedup-checked) ──────────────────
     const { data: overdueAutos } = await supabase
       .from('automations')
@@ -203,6 +222,7 @@ serve(async (req) => {
                 inv.itemCode = inv.itemCode || tk.abbreviation || ''
               }
             } catch { /* ignore */ }
+            inv = await aggregateInvoice(supabase, inv)
           }
 
           for (const auto of overdueAutos) {
@@ -293,6 +313,7 @@ serve(async (req) => {
                 inv.itemCode = inv.itemCode || tk.abbreviation || ''
               }
             } catch { /* ignore */ }
+            inv = await aggregateInvoice(supabase, inv)
           }
 
           for (const auto of invoiceAutos) {
