@@ -17,28 +17,35 @@ export function CheckInPage() {
   const [result, setResult] = useState(null)
   const [checkingIn, setCheckingIn] = useState(false)
   const [checkedInList, setCheckedInList] = useState([])
+  const [pendingList, setPendingList] = useState([])
   const inputRef = useRef(null)
 
-  const fetchCheckedIn = async () => {
+  const fetchLists = async () => {
     try {
       const user = getUser()
       const branchId = user?.branch_id || ''
       if (!branchId) return
-      const { data } = await supabase
+
+      const baseQ = supabase
         .from('transactions')
-        .select('id, unique_code, buyer_name, buyer_email, buyer_phone, quantity, checked_in_at, checked_in_by, ticket_id, tickets(title, abbreviation)')
+        .select('id, unique_code, buyer_name, buyer_email, buyer_phone, quantity, status, checked_in_at, checked_in_by, ticket_id, tickets(title, abbreviation)')
         .eq('branch', branchId)
-        .eq('status', 'checked_in')
-        .order('checked_in_at', { ascending: false })
-        .limit(20)
-      if (data) setCheckedInList(data)
+        .neq('status', 'available')
+
+      const [pendingR, checkedR] = await Promise.all([
+        baseQ.order('purchased_at', { ascending: false }).limit(20).in('status', ['pending', 'paid']),
+        baseQ.order('checked_in_at', { ascending: false }).limit(20).eq('status', 'checked_in'),
+      ])
+
+      setPendingList(pendingR.data || [])
+      setCheckedInList(checkedR.data || [])
     } catch { /* quiet */ }
   }
 
-  useEffect(() => { fetchCheckedIn() }, [])
+  useEffect(() => { fetchLists() }, [])
 
-  const lookup = async () => {
-    const trimmed = code.trim()
+  const lookup = async (overrideCode) => {
+    const trimmed = (overrideCode || code).trim()
     if (!trimmed) { setResult({ error: 'Please enter a unique code' }); return }
     setLoading(true)
     setResult(null)
@@ -113,7 +120,7 @@ export function CheckInPage() {
         checkedInAt: updated.checked_in_at,
         checkedInBy: updated.checked_in_by,
       }))
-      fetchCheckedIn()
+      fetchLists()
     } catch (err) {
       alert('Check-in failed: ' + (err.message || 'Unknown error'))
     }
@@ -267,6 +274,32 @@ export function CheckInPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {pendingList.length > 0 && (
+        <div className="apple-card">
+          <h2 className="text-[15px] font-semibold text-[var(--ink)] mb-4">Pending Check-in ({pendingList.length})</h2>
+          <div className="space-y-2">
+            {pendingList.map(t => (
+              <div key={t.id} className="flex items-center justify-between py-2.5 px-3 rounded-[10px] bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/20 cursor-pointer hover:bg-yellow-100 dark:hover:bg-yellow-500/20 transition-colors"
+                onClick={() => { setCode(t.unique_code); lookup(t.unique_code) }}>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} className="text-yellow-500 shrink-0" />
+                    <span className="text-[14px] font-semibold text-[var(--ink)] truncate">{t.buyer_name}</span>
+                    <span className="text-[11px] text-[var(--muted)] font-mono shrink-0">{t.tickets?.abbreviation || ''}</span>
+                    <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${t.status === 'paid' ? 'bg-blue-100 text-blue-700' : 'bg-yellow-100 text-yellow-700'}`}>{t.status === 'paid' ? 'Paid' : 'Pending'}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5 ml-6 text-[12px] text-[var(--muted)]">
+                    {t.buyer_email && <span className="truncate">{t.buyer_email}</span>}
+                    <span>Qty: {t.quantity}</span>
+                    <span className="font-mono text-[11px]">{t.unique_code}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {checkedInList.length > 0 && (
         <div className="apple-card">
