@@ -699,13 +699,24 @@ export async function getAvailableTickets() {
   const ids = data.map(t => t.id)
   const availMap = {}
   if (ids.length > 0) {
-    const { data: txns } = await filterBranch(
-      supabase
-        .from('transactions')
-        .select('ticket_id')
-        .in('ticket_id', ids)
-        .eq('status', 'available')
-    )
+    const { data: txns, error: txError } = await supabase
+      .from('transactions')
+      .select('ticket_id')
+      .in('ticket_id', ids)
+      .eq('status', 'available')
+
+    if (txError) {
+      console.error('getAvailableTickets txns error:', txError)
+      return data.map(t => ({
+        id: String(t.id),
+        title: t.title,
+        abbreviation: t.abbreviation,
+        prefix: `${t.abbreviation}${(t.date_time ? new Date(t.date_time).toISOString().slice(0, 10).replace(/-/g, '') : '00000000')}`,
+        price: Number(t.price),
+        availableCount: 0,
+      }))
+    }
+
     if (txns) {
       for (const t of txns) {
         availMap[t.ticket_id] = (availMap[t.ticket_id] || 0) + 1
