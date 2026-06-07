@@ -688,7 +688,7 @@ export async function getTicketInvoices() {
 
 export async function getAvailableTickets() {
   const { data, error } = await filterBranch(
-    supabase.from('tickets').select('*').order('date_time', { ascending: true })
+    supabase.from('tickets').select(`*, instances:transactions(status)`).order('date_time', { ascending: true })
   )
 
   if (error) {
@@ -696,47 +696,21 @@ export async function getAvailableTickets() {
     return []
   }
 
-  const ids = data.map(t => t.id)
-  const availMap = {}
-  if (ids.length > 0) {
-    const { data: txns, error: txError } = await supabase
-      .from('transactions')
-      .select('ticket_id')
-      .in('ticket_id', ids)
-      .eq('status', 'available')
-
-    if (txError) {
-      console.error('getAvailableTickets txns error:', txError)
-      return data.map(t => ({
+  return data
+    .map(t => {
+      const availableCount = (t.instances || []).filter(i => i.status === 'available').length
+      const dt = t.date_time ? new Date(t.date_time) : null
+      const dateStr = dt ? dt.toISOString().slice(0, 10).replace(/-/g, '') : '00000000'
+      return {
         id: String(t.id),
         title: t.title,
         abbreviation: t.abbreviation,
-        prefix: `${t.abbreviation}${(t.date_time ? new Date(t.date_time).toISOString().slice(0, 10).replace(/-/g, '') : '00000000')}`,
+        prefix: `${t.abbreviation}${dateStr}`,
         price: Number(t.price),
-        availableCount: 0,
-      }))
-    }
-
-    if (txns) {
-      for (const t of txns) {
-        availMap[t.ticket_id] = (availMap[t.ticket_id] || 0) + 1
+        availableCount,
       }
-    }
-  }
-
-  return data.map(t => {
-    const availableCount = availMap[t.id] || 0
-    const dt = t.date_time ? new Date(t.date_time) : null
-    const dateStr = dt ? dt.toISOString().slice(0, 10).replace(/-/g, '') : '00000000'
-    return {
-      id: String(t.id),
-      title: t.title,
-      abbreviation: t.abbreviation,
-      prefix: `${t.abbreviation}${dateStr}`,
-      price: Number(t.price),
-      availableCount,
-    }
-  })
+    })
+    .filter(t => t.availableCount > 0)
 }
 
 export async function getAvailableTicketInstances() {
