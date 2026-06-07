@@ -139,7 +139,8 @@ export function TransactionsPage() {
               <th className="text-right px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs hidden lg:table-cell">Total</th>
               <th className="text-center px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs">Status</th>
               <th className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs hidden xl:table-cell">Date</th>
-              {Array.from(allMetaKeys).slice(0, 2).map(k => (
+              <th className="text-center px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs hidden xl:table-cell">Proof</th>
+              {Array.from(allMetaKeys).slice(0, 1).map(k => (
                 <th key={k} className="text-left px-4 py-3 font-medium text-slate-500 dark:text-slate-400 text-xs hidden xl:table-cell capitalize">{k.replace(/_/g, ' ')}</th>
               ))}
             </tr>
@@ -165,7 +166,12 @@ export function TransactionsPage() {
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden xl:table-cell text-xs whitespace-nowrap">
                   {t.purchased_at ? new Date(t.purchased_at).toLocaleString() : '—'}
                 </td>
-                {Array.from(allMetaKeys).slice(0, 2).map(k => (
+                <td className="px-4 py-3 hidden xl:table-cell text-center">
+                  {t.metadata?.proof_url ? (
+                    <img src={t.metadata.proof_url} alt="Proof" className="w-10 h-10 rounded object-cover border border-slate-200 mx-auto cursor-pointer" onClick={e => { e.stopPropagation(); setDetailOpen(t) }} title="Click to view details" />
+                  ) : '—'}
+                </td>
+                {Array.from(allMetaKeys).slice(0, 1).map(k => (
                   <td key={k} className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden xl:table-cell text-xs">
                     {(() => { const v = t.metadata?.[k]; return v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v) })()}
                   </td>
