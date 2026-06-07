@@ -231,28 +231,28 @@ DROP POLICY IF EXISTS "Allow all access" ON transactions;
 CREATE POLICY "Branch-isolated transaction read" ON transactions
   FOR SELECT USING (
     auth.jwt()->>'role' = 'owner'
-    OR branch = auth.jwt()->>'branch'
+    OR branch = auth.jwt()->>'branch_id'
     OR branch IS NULL
   );
 
 CREATE POLICY "Branch-isolated transaction create" ON transactions
   FOR INSERT WITH CHECK (
     auth.jwt()->>'role' = 'owner'
-    OR branch = auth.jwt()->>'branch'
+    OR branch = auth.jwt()->>'branch_id'
     OR branch IS NULL
   );
 
 CREATE POLICY "Branch-isolated transaction update" ON transactions
   FOR UPDATE USING (
     auth.jwt()->>'role' = 'owner'
-    OR branch = auth.jwt()->>'branch'
+    OR branch = auth.jwt()->>'branch_id'
     OR branch IS NULL
   );
 
 CREATE POLICY "Branch-isolated transaction delete" ON transactions
   FOR DELETE USING (
     auth.jwt()->>'role' = 'owner'
-    OR branch = auth.jwt()->>'branch'
+    OR branch = auth.jwt()->>'branch_id'
     OR branch IS NULL
   );
 

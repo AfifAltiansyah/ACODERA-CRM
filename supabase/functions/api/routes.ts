@@ -952,7 +952,15 @@ export async function handleExternal(req: Request, method: string, path: string)
             String(insertData.proof_name || ''),
             branchId
           )
-          if (proofUrl) insertData.proof_url = proofUrl
+          if (proofUrl) {
+            insertData.proof_url = proofUrl
+            insertData.metadata = insertData.metadata || {}
+            ;(insertData.metadata as Record<string, unknown>).proof_url = proofUrl
+          }
+        }
+        if (insertData.proof_name) {
+          insertData.metadata = insertData.metadata || {}
+          ;(insertData.metadata as Record<string, unknown>).proof_name = insertData.proof_name
         }
         delete insertData.proof
         delete insertData.proof_name
