@@ -26,19 +26,18 @@ export function CheckInPage() {
       const branchId = user?.branch_id || ''
       if (!branchId) return
 
-      const baseQ = supabase
-        .from('transactions')
-        .select('id, unique_code, buyer_name, buyer_email, buyer_phone, quantity, status, checked_in_at, checked_in_by, ticket_id, tickets(title, abbreviation)')
-        .eq('branch', branchId)
-        .neq('status', 'available')
+      const select = 'id, unique_code, buyer_name, buyer_email, buyer_phone, quantity, status, checked_in_at, checked_in_by, ticket_id, tickets(title, abbreviation)'
 
-      const [pendingR, checkedR] = await Promise.all([
-        baseQ.order('purchased_at', { ascending: false }).limit(20).in('status', ['pending', 'paid']),
-        baseQ.order('checked_in_at', { ascending: false }).limit(20).eq('status', 'checked_in'),
-      ])
+      const { data: pending } = await supabase.from('transactions').select(select)
+        .eq('branch', branchId).in('status', ['pending', 'paid'])
+        .order('purchased_at', { ascending: false }).limit(20)
 
-      setPendingList(pendingR.data || [])
-      setCheckedInList(checkedR.data || [])
+      const { data: checked } = await supabase.from('transactions').select(select)
+        .eq('branch', branchId).eq('status', 'checked_in')
+        .order('checked_in_at', { ascending: false }).limit(20)
+
+      setPendingList(pending || [])
+      setCheckedInList(checked || [])
     } catch { /* quiet */ }
   }
 
