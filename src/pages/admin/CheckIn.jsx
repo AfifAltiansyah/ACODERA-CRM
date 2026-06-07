@@ -162,7 +162,7 @@ export function CheckInPage() {
               />
             </div>
             <button
-              onClick={lookup}
+              onClick={() => lookup()}
               disabled={loading || !code.trim()}
               className="flex items-center gap-2 px-5 py-3 rounded-[10px] text-[13px] font-medium text-white bg-[var(--accent)] hover:bg-[var(--accent-hover)] transition-all disabled:opacity-40 active:scale-[0.97]"
             >
