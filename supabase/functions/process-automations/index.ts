@@ -206,6 +206,8 @@ serve(async (req) => {
           }
 
           for (const auto of overdueAutos) {
+            if (auto.branch && inv.branch && auto.branch !== inv.branch) continue
+
             const { data: recentlySent } = await supabase
               .from('automation_logs')
               .select('id')
@@ -294,6 +296,8 @@ serve(async (req) => {
           }
 
           for (const auto of invoiceAutos) {
+            if (auto.branch && inv.branch && auto.branch !== inv.branch) continue
+
             const { data: recentlySent } = await supabase
               .from('automation_logs')
               .select('id')

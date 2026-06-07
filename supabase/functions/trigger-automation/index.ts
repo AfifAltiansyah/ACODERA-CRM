@@ -81,12 +81,18 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const { data: automations, error: fetchError } = await supabase
+    let q = supabase
       .from('automations')
       .select('*')
       .eq('trigger_event', event)
       .eq('schedule_type', 'immediate')
       .eq('status', 'active')
+
+    if (extraData.branch) {
+      q = q.eq('branch', extraData.branch)
+    }
+
+    const { data: automations, error: fetchError } = await q
 
     if (fetchError) {
       return corsResponse({ success: false, error: 'Failed to query automations: ' + fetchError.message })

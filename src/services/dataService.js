@@ -842,7 +842,7 @@ export async function addInvoice(invoice) {
       triggerAutomationEvent('ticket.purchased', {
         contact_email: invoice.customerEmail,
         contact_name: invoice.customerName,
-        data: { ticket_id: invoice.ticketId, quantity: qty, buyer_email: invoice.customerEmail, buyer_name: invoice.customerName },
+        data: { ticket_id: invoice.ticketId, quantity: qty, buyer_email: invoice.customerEmail, buyer_name: invoice.customerName, branch: currentBranchId() },
       })
       insertNotification({
         type: 'ticket', title: 'Ticket purchased',
