@@ -778,6 +778,46 @@ async function findUserById(id: number) {
   return data as any
 }
 
+// ─── Proof Upload Helper ──────────────────────────────────────────────
+
+async function storeProof(base64Data: string, filename: string, branchId: string): Promise<string | null> {
+  if (!base64Data) return null
+  try {
+    const matches = base64Data.match(/^data:(.+);base64,(.+)$/)
+    if (!matches) return null
+
+    const mimeType = matches[1]
+    const base64 = matches[2]
+    const ext = mimeType.split('/')[1] || 'png'
+    const fileName = filename || 'proof.' + ext
+
+    const binaryStr = atob(base64)
+    const bytes = new Uint8Array(binaryStr.length)
+    for (let i = 0; i < binaryStr.length; i++) {
+      bytes[i] = binaryStr.charCodeAt(i)
+    }
+
+    const path = `proofs/${branchId}/${Date.now()}_${fileName}`
+    const supabase = getSupabase()
+    const { error } = await supabase.storage
+      .from('transactions')
+      .upload(path, bytes, { contentType: mimeType, upsert: true })
+
+    if (error) {
+      console.error('[proof] Upload failed:', error.message)
+      return null
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('transactions').getPublicUrl(path)
+    return publicUrl
+  } catch (err) {
+    console.error('[proof] Error:', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
+// ─── External API ────────────────────────────────────────────────────
+
 export async function handleExternal(req: Request, method: string, path: string): Promise<Response> {
   const respond = (data: unknown, status = 200) => jsonResponse(data, status, req)
 
@@ -881,7 +921,7 @@ export async function handleExternal(req: Request, method: string, path: string)
 
         const { data: ticket } = await supabase
           .from('tickets')
-          .select('quantity')
+          .select('quantity, title')
           .eq('id', ticketId)
           .single()
 
@@ -899,6 +939,40 @@ export async function handleExternal(req: Request, method: string, path: string)
 
         if (requestedQty > remaining) {
           return respond({ error: `Only ${remaining} tickets available` }, 400)
+        }
+      }
+
+      if (entity === 'transactions') {
+        const branchId = user!.branch_id || String(user!.branch || '')
+        insertData.branch = branchId
+
+        if (insertData.proof) {
+          const proofUrl = await storeProof(
+            String(insertData.proof),
+            String(insertData.proof_name || ''),
+            branchId
+          )
+          if (proofUrl) insertData.proof_url = proofUrl
+        }
+        delete insertData.proof
+        delete insertData.proof_name
+
+        const knownFields = [
+          'ticket_id', 'transaction_id', 'unique_code', 'barcode',
+          'quantity', 'price_per_unit', 'total_amount',
+          'buyer_name', 'buyer_email', 'buyer_phone',
+          'payment_method', 'payment_detail', 'status', 'purchased_at', 'branch', 'proof_url'
+        ]
+
+        const metadata: Record<string, unknown> = {}
+        for (const key of Object.keys(insertData)) {
+          if (!knownFields.includes(key) && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
+            metadata[key] = insertData[key]
+            delete insertData[key]
+          }
+        }
+        if (Object.keys(metadata).length > 0) {
+          insertData.metadata = metadata
         }
       }
 

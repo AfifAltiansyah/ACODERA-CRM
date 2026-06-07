@@ -30,6 +30,7 @@ import { ApiKeysPage } from './pages/admin/ApiKeys'
 import { GatewaySettingsPage } from './pages/admin/GatewaySettings'
 import { AuditLogsPage } from './pages/admin/AuditLogs'
 import { PaymentOptionsPage } from './pages/admin/PaymentOptions'
+import { TransactionsPage } from './pages/admin/Transactions'
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api'
 
@@ -122,6 +123,7 @@ export default function App() {
               <Route path="admin/audit-logs" element={<AuditLogsPage />} />
               <Route path="admin/gateway" element={<GatewaySettingsPage />} />
               <Route path="admin/payment-options" element={<PaymentOptionsPage />} />
+              <Route path="admin/transactions" element={<TransactionsPage />} />
               <Route path="api-keys" element={<ApiKeysPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />
