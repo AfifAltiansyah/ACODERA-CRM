@@ -103,6 +103,7 @@ serve(async (req) => {
     }
 
     const results = []
+    const sentThisRequest = new Set<string>()
 
     for (const auto of automations) {
       const isEmail = auto.type === 'Email Drip' || auto.type === 'Marketing Campaign' || auto.type === 'Invoice Reminder'
@@ -261,6 +262,14 @@ serve(async (req) => {
         let sent = 0
         let failed = 0
 
+        // Filter out recipients already sent in this request (in-memory dedup)
+        recipients = recipients.filter(e => !sentThisRequest.has(e))
+
+        if (recipients.length === 0) {
+          results.push({ automation_id: auto.id, name: auto.name, status: 'skipped', reason: 'Already sent earlier in this request' })
+          continue
+        }
+
         // Global dedup: skip recipients already emailed in last 24h
         if (recipients.length > 0) {
           const { data: existing } = await supabase
@@ -300,6 +309,7 @@ serve(async (req) => {
 
             if (result.success) {
               sent++
+              sentThisRequest.add(email)
               await logEmailResult(supabase, auto.id, email, subject, 'sent')
             } else {
               failed++
