@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Users, Zap, GitBranch, BarChart3, Star,
   LogOut, ChevronLeft, ChevronRight, X, Receipt, Ticket, Palette, Trash2,
-  Shield, Key, Activity, Banknote, ArrowLeftRight
+  Shield, Key, Activity, Banknote, ArrowLeftRight, QrCode
 } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import logo from '../../assets/Acodera-logo.png'
@@ -24,6 +24,7 @@ const mainNavItems = [
   { label: 'Payment Gateway', icon: Receipt, path: '/dashboard/admin/gateway' },
   { label: 'Payment Options', icon: Banknote, path: '/dashboard/admin/payment-options' },
   { label: 'Transactions', icon: ArrowLeftRight, path: '/dashboard/admin/transactions' },
+  { label: 'Check-in', icon: QrCode, path: '/dashboard/admin/checkin' },
 ]
 
 const adminNavItems = [
