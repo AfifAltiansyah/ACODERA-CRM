@@ -438,7 +438,7 @@ function formatTicket(t) {
 
 export async function getTickets() {
   const { data, error } = await filterBranch(
-    supabase.from('tickets').select(`*, instances:transactions(status)`).order('date_time', { ascending: true })
+    supabase.from('tickets').select('*').order('date_time', { ascending: true })
   )
 
   if (error) {
@@ -446,14 +446,37 @@ export async function getTickets() {
     return []
   }
 
+  if (!data || data.length === 0) return []
+
+  const ids = data.map(t => t.id)
+  const statsMap = {}
+
+  const { data: txns, error: txError } = await supabase
+    .from('transactions')
+    .select('ticket_id, status')
+    .in('ticket_id', ids)
+
+  if (txError) {
+    console.error('getTickets txns error:', txError)
+  }
+
+  if (txns) {
+    for (const t of txns) {
+      if (!statsMap[t.ticket_id]) statsMap[t.ticket_id] = { sold: 0, available: 0 }
+      if (t.status === 'available') {
+        statsMap[t.ticket_id].available++
+      } else {
+        statsMap[t.ticket_id].sold++
+      }
+    }
+  }
+
   return data.map(t => {
-    const instances = t.instances || []
-    const soldCount = instances.filter(i => i.status !== 'available').length
-    const availableCount = instances.filter(i => i.status === 'available').length
+    const stats = statsMap[t.id] || { sold: 0, available: 0 }
     return {
       ...formatTicket(t),
-      soldCount,
-      availableCount,
+      soldCount: stats.sold,
+      availableCount: stats.available,
     }
   })
 }
@@ -691,7 +714,7 @@ export async function getTicketInvoices() {
 
 export async function getAvailableTickets() {
   const { data, error } = await filterBranch(
-    supabase.from('tickets').select(`*, instances:transactions(status)`).order('date_time', { ascending: true })
+    supabase.from('tickets').select('*').order('date_time', { ascending: true })
   )
 
   if (error) {
@@ -699,9 +722,30 @@ export async function getAvailableTickets() {
     return []
   }
 
+  if (!data || data.length === 0) return []
+
+  const ids = data.map(t => t.id)
+  const availMap = {}
+
+  const { data: txns, error: txError } = await supabase
+    .from('transactions')
+    .select('ticket_id')
+    .in('ticket_id', ids)
+    .eq('status', 'available')
+
+  if (txError) {
+    console.error('getAvailableTickets txns error:', txError)
+  }
+
+  if (txns) {
+    for (const t of txns) {
+      availMap[t.ticket_id] = (availMap[t.ticket_id] || 0) + 1
+    }
+  }
+
   return data
     .map(t => {
-      const availableCount = (t.instances || []).filter(i => i.status === 'available').length
+      const availableCount = availMap[t.id] || 0
       const dt = t.date_time ? new Date(t.date_time) : null
       const dateStr = dt ? dt.toISOString().slice(0, 10).replace(/-/g, '') : '00000000'
       return {
