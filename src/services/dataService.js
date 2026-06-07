@@ -842,6 +842,7 @@ export async function addInvoice(invoice) {
       triggerAutomationEvent('ticket.purchased', {
         contact_email: invoice.customerEmail,
         contact_name: invoice.customerName,
+        invoice_template: invoice.template,
         data: { ticket_id: invoice.ticketId, quantity: qty, buyer_email: invoice.customerEmail, buyer_name: invoice.customerName, branch: currentBranchId() },
       })
       insertNotification({
@@ -855,6 +856,7 @@ export async function addInvoice(invoice) {
       triggerAutomationEvent('invoice.paid', {
         contact_email: invoice.customerEmail,
         contact_name: invoice.customerName,
+        invoice_template: invoice.template,
         data: {
           invoice_id: transactionId,
           amount: Number(invoice.pricePerUnit) * qty,
@@ -913,6 +915,7 @@ export async function addInvoice(invoice) {
   triggerAutomationEvent('invoice.created', {
     contact_email: invoice.customerEmail,
     contact_name: invoice.customerName,
+    invoice_template: invoice.template,
     data: {
       invoice_id: invoice.transactionId,
       amount: invoice.totalAmount,
@@ -943,6 +946,7 @@ export async function addInvoice(invoice) {
     triggerAutomationEvent('invoice.paid', {
       contact_email: invoice.customerEmail,
       contact_name: invoice.customerName,
+      invoice_template: invoice.template,
       data: {
         invoice_id: invoice.transactionId,
         amount: invoice.totalAmount,

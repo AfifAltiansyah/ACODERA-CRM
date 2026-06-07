@@ -501,12 +501,30 @@ export async function fetchInvoiceTemplate(supabase: any, branch: string): Promi
     if (!branch) return null
     const { data: users } = await supabase
       .from('users')
-      .select('invoice_template')
+      .select('invoice_template, role')
       .eq('branch_id', branch)
-      .limit(1)
+      .limit(50)
+
     if (users && users.length > 0) {
-      const raw = users[0].invoice_template
-      if (raw) return typeof raw === 'string' ? JSON.parse(raw) : raw
+      const parseTemplate = (raw: any) => {
+        if (!raw) return null
+        if (typeof raw === 'object') return raw
+        if (typeof raw === 'string' && raw !== '{}' && raw !== '') {
+          try { return JSON.parse(raw) } catch { return null }
+        }
+        return null
+      }
+
+      // Prefer the branch owner's template
+      const owner = users.find((u: any) => u.role === 'owner')
+      const ownerTpl = owner ? parseTemplate(owner.invoice_template) : null
+      if (ownerTpl && Object.keys(ownerTpl).length > 0) return ownerTpl
+
+      // Fallback: first user with a valid non-empty template
+      for (const u of users) {
+        const tpl = parseTemplate(u.invoice_template)
+        if (tpl && Object.keys(tpl).length > 0) return tpl
+      }
     }
   } catch (e) {
     console.error('Failed to fetch invoice template:', e)

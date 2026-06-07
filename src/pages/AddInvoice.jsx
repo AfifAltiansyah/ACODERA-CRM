@@ -112,6 +112,7 @@ export function AddInvoicePage() {
         expiresIn: Number(form.expiresIn) || 24,
         transactionId: form.ticketId ? undefined : generateTransactionId(),
         customerId: '',
+        template,
       })
       navigate('/dashboard/invoicing')
     } catch (err) {
