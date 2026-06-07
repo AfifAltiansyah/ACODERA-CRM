@@ -946,21 +946,17 @@ export async function handleExternal(req: Request, method: string, path: string)
         const branchId = user!.branch_id || String(user!.branch || '')
         insertData.branch = branchId
 
+        const proofMeta: Record<string, unknown> = {}
         if (insertData.proof) {
           const proofUrl = await storeProof(
             String(insertData.proof),
             String(insertData.proof_name || ''),
             branchId
           )
-          if (proofUrl) {
-            insertData.proof_url = proofUrl
-            insertData.metadata = insertData.metadata || {}
-            ;(insertData.metadata as Record<string, unknown>).proof_url = proofUrl
-          }
+          if (proofUrl) proofMeta.proof_url = proofUrl
         }
         if (insertData.proof_name) {
-          insertData.metadata = insertData.metadata || {}
-          ;(insertData.metadata as Record<string, unknown>).proof_name = insertData.proof_name
+          proofMeta.proof_name = insertData.proof_name
         }
         delete insertData.proof
         delete insertData.proof_name
@@ -969,18 +965,23 @@ export async function handleExternal(req: Request, method: string, path: string)
           'ticket_id', 'transaction_id', 'unique_code', 'barcode',
           'quantity', 'price_per_unit', 'total_amount',
           'buyer_name', 'buyer_email', 'buyer_phone',
-          'payment_method', 'payment_detail', 'status', 'purchased_at', 'branch', 'proof_url'
+          'payment_method', 'payment_detail', 'status', 'purchased_at', 'branch'
         ]
 
-        const metadata: Record<string, unknown> = {}
+        const fieldMeta: Record<string, unknown> = {}
         for (const key of Object.keys(insertData)) {
           if (!knownFields.includes(key) && key !== 'id' && key !== 'created_at' && key !== 'updated_at') {
-            metadata[key] = insertData[key]
+            fieldMeta[key] = insertData[key]
             delete insertData[key]
           }
         }
-        if (Object.keys(metadata).length > 0) {
-          insertData.metadata = metadata
+
+        const existingMeta = (insertData.metadata && typeof insertData.metadata === 'object')
+          ? insertData.metadata as Record<string, unknown>
+          : {}
+        insertData.metadata = { ...existingMeta, ...proofMeta, ...fieldMeta }
+        if (Object.keys(insertData.metadata as Record<string, unknown>).length === 0) {
+          delete insertData.metadata
         }
       }
 

@@ -166,7 +166,9 @@ export function TransactionsPage() {
                   {t.purchased_at ? new Date(t.purchased_at).toLocaleString() : '—'}
                 </td>
                 {Array.from(allMetaKeys).slice(0, 2).map(k => (
-                  <td key={k} className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden xl:table-cell text-xs">{String(t.metadata?.[k] || '—')}</td>
+                  <td key={k} className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden xl:table-cell text-xs">
+                    {(() => { const v = t.metadata?.[k]; return v == null ? '—' : typeof v === 'object' ? JSON.stringify(v) : String(v) })()}
+                  </td>
                 ))}
               </tr>
             ))}
@@ -240,7 +242,7 @@ export function TransactionsPage() {
                         return (
                           <div key={key} className="flex justify-between py-1 border-b border-slate-50 dark:border-slate-700/50">
                             <span className="text-xs text-slate-400 capitalize">{key.replace(/_/g, ' ')}</span>
-                            <span className="text-xs font-medium text-slate-900 dark:text-white">{String(value)}</span>
+                            <span className="text-xs font-medium text-slate-900 dark:text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
                           </div>
                         )
                       })}
