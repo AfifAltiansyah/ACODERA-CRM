@@ -186,6 +186,9 @@ serve(async (req) => {
             txnData.item_name = extraData.itemName || extraData.item_name || txnData.item_name || ''
             txnData.itemCode = extraData.itemCode || txnData.itemCode || txnData.unique_code || ''
             txnData.ticket_title = extraData.ticket_title || txnData.ticket_title || ''
+            if (extraData.quantity != null) txnData.quantity = Number(extraData.quantity)
+            if (extraData.totalAmount != null) txnData.total_amount = Number(extraData.totalAmount)
+            if (extraData.transaction_id) txnData.transaction_id = String(extraData.transaction_id)
 
             if (txnData.ticket_id) {
               try {

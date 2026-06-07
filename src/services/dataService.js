@@ -831,17 +831,19 @@ export async function addInvoice(invoice) {
       paymentDetail: invoice.paymentDetail || '',
     }
 
-    triggerAutomationEvent('ticket.purchased', {
-      contact_email: invoice.customerEmail,
-      contact_name: invoice.customerName,
-      data: { ticket_id: invoice.ticketId, quantity: qty, buyer_email: invoice.customerEmail, buyer_name: invoice.customerName },
-    })
-    insertNotification({
-      type: 'ticket', title: 'Ticket purchased',
-      message: `${invoice.customerName || 'Buyer'} — ${qty} ticket(s)`,
-      entityId: transactionId,
-      link: `/dashboard/invoicing/${transactionId}`,
-    })
+    if ((invoice.status || 'pending') !== 'paid') {
+      triggerAutomationEvent('ticket.purchased', {
+        contact_email: invoice.customerEmail,
+        contact_name: invoice.customerName,
+        data: { ticket_id: invoice.ticketId, quantity: qty, buyer_email: invoice.customerEmail, buyer_name: invoice.customerName },
+      })
+      insertNotification({
+        type: 'ticket', title: 'Ticket purchased',
+        message: `${invoice.customerName || 'Buyer'} — ${qty} ticket(s)`,
+        entityId: transactionId,
+        link: `/dashboard/invoicing/${transactionId}`,
+      })
+    }
     if ((invoice.status || 'pending') === 'paid') {
       triggerAutomationEvent('invoice.paid', {
         contact_email: invoice.customerEmail,
