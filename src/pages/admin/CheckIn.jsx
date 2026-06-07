@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, CheckCircle, XCircle, Clock, User, Ticket, Mail, Phone, QrCode } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -16,7 +16,26 @@ export function CheckInPage() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [checkingIn, setCheckingIn] = useState(false)
+  const [checkedInList, setCheckedInList] = useState([])
   const inputRef = useRef(null)
+
+  const fetchCheckedIn = async () => {
+    try {
+      const user = getUser()
+      const branchId = user?.branch_id || ''
+      if (!branchId) return
+      const { data } = await supabase
+        .from('transactions')
+        .select('id, unique_code, buyer_name, buyer_email, buyer_phone, quantity, checked_in_at, checked_in_by, ticket_id, tickets(title, abbreviation)')
+        .eq('branch', branchId)
+        .eq('status', 'checked_in')
+        .order('checked_in_at', { ascending: false })
+        .limit(20)
+      if (data) setCheckedInList(data)
+    } catch { /* quiet */ }
+  }
+
+  useEffect(() => { fetchCheckedIn() }, [])
 
   const lookup = async () => {
     const trimmed = code.trim()
@@ -94,6 +113,7 @@ export function CheckInPage() {
         checkedInAt: updated.checked_in_at,
         checkedInBy: updated.checked_in_by,
       }))
+      fetchCheckedIn()
     } catch (err) {
       alert('Check-in failed: ' + (err.message || 'Unknown error'))
     }
@@ -131,7 +151,7 @@ export function CheckInPage() {
                 onChange={e => setCode(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g. APIP2026060700001"
-                className="w-full pl-9 pr-4 py-3 rounded-[10px] border border-[var(--hairline)] bg-white text-[var(--ink)] text-[15px] font-mono placeholder-[var(--muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
+                className="w-full pl-9 pr-4 py-3 rounded-[10px] border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-[var(--ink)] dark:text-white text-[15px] font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-[var(--accent)] transition-colors shadow-sm"
                 autoFocus
               />
             </div>
@@ -247,6 +267,35 @@ export function CheckInPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {checkedInList.length > 0 && (
+        <div className="apple-card">
+          <h2 className="text-[15px] font-semibold text-[var(--ink)] mb-4">Recently Checked In ({checkedInList.length})</h2>
+          <div className="space-y-2">
+            {checkedInList.map(t => (
+              <div key={t.id} className="flex items-center justify-between py-2.5 px-3 rounded-[10px] bg-green-50 dark:bg-green-500/10 border border-green-100 dark:border-green-500/20">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle size={14} className="text-green-500 shrink-0" />
+                    <span className="text-[14px] font-semibold text-[var(--ink)] truncate">{t.buyer_name}</span>
+                    <span className="text-[11px] text-[var(--muted)] font-mono shrink-0">{t.tickets?.abbreviation || ''}</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-0.5 ml-6 text-[12px] text-[var(--muted)]">
+                    {t.buyer_email && <span className="truncate">{t.buyer_email}</span>}
+                    <span>Qty: {t.quantity}</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-3">
+                  <p className="text-[11px] text-green-600 dark:text-green-400">
+                    {t.checked_in_at ? new Date(t.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  </p>
+                  {t.checked_in_by && <p className="text-[10px] text-[var(--muted)]">by {t.checked_in_by}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
