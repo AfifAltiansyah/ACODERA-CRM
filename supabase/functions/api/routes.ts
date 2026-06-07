@@ -873,6 +873,9 @@ export async function handleExternal(req: Request, method: string, path: string)
       if (tx.status === 'checked_in') {
         return respond({ error: 'Already checked in', checked_in_at: tx.checked_in_at }, 400)
       }
+      if (tx.status === 'pending') {
+        return respond({ error: 'Buyer has not paid yet' }, 400)
+      }
 
       const { data: updated, error: updateErr } = await supabase
         .from('transactions')

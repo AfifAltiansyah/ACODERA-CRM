@@ -93,7 +93,7 @@ export function CheckInPage() {
   }
 
   const checkIn = async () => {
-    if (!result || result.status !== 'pending') return
+    if (!result || result.status !== 'paid') return
     setCheckingIn(true)
     try {
       const user = getUser()
@@ -128,7 +128,7 @@ export function CheckInPage() {
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
-      if (result?.status === 'pending') checkIn()
+      if (result?.status === 'paid') checkIn()
       else lookup()
     }
   }
@@ -209,7 +209,8 @@ export function CheckInPage() {
                     <span className={`text-[13px] font-semibold ${statusConfig?.color}`}>
                       {result.status === 'checked_in' ? 'Already Checked In' :
                        result.status === 'cancelled' ? 'Registration Cancelled' :
-                       'Ready for Check-in'}
+                       result.status === 'paid' ? 'Paid — Ready for Check-in' :
+                       'Awaiting Payment'}
                     </span>
                   </div>
 
@@ -249,7 +250,7 @@ export function CheckInPage() {
                     )}
                   </div>
 
-                  {result.status === 'pending' && (
+                  {result.status === 'paid' && (
                     <motion.button
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
@@ -260,6 +261,12 @@ export function CheckInPage() {
                       <CheckCircle size={17} />
                       {checkingIn ? 'Checking in...' : 'Confirm Check-in'}
                     </motion.button>
+                  )}
+
+                  {result.status === 'pending' && (
+                    <p className="mt-3 text-[13px] text-yellow-600 dark:text-yellow-400 text-center font-medium">
+                      Buyer has not paid yet — mark as paid on Transactions page first
+                    </p>
                   )}
 
                   {result.status === 'checked_in' && (
