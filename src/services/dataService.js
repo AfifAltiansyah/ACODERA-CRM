@@ -740,10 +740,8 @@ export async function addInvoice(invoice) {
     const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`
     const transactionId = `TKT-${dateStr}-${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`
 
-    const { data: available, error: fetchError } = await filterBranch(
-      supabase
-        .from('transactions').select('id, unique_code').eq('ticket_id', Number(invoice.ticketId)).eq('status', 'available').order('unique_code', { ascending: true }).limit(qty)
-    )
+    const { data: available, error: fetchError } = await supabase
+      .from('transactions').select('id, unique_code').eq('ticket_id', Number(invoice.ticketId)).eq('status', 'available').order('unique_code', { ascending: true }).limit(qty)
 
     if (fetchError) throw fetchError
     if (!available || available.length < qty) throw new Error('Not enough available tickets')
