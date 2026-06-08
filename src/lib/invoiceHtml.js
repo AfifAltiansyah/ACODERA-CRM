@@ -156,8 +156,7 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     '<span style="display:inline-block;margin-top:6px;padding:2px 12px;border-radius:10px;font-size:11px;font-weight:600;color:' + esc(statusColor) + ';border:1px solid ' + esc(statusColor) + '30;">' + esc(statusLabel) + '</span>' +
     '</td></tr></table>' +
     ticketNameHtml +
-    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;table-layout:fixed;" cellpadding="0" cellspacing="0" border="0">' +
-    '<colgroup><col style="width:52%;" /><col style="width:10%;" /><col style="width:19%;" /><col style="width:19%;" /></colgroup>' +
+    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">' +
     '<tr>' +
     '<td style="width:50%;vertical-align:top;">' +
     '<p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Bill To</p>' +
@@ -167,7 +166,8 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     '</td>' +
     '<td style="width:50%;vertical-align:top;text-align:right;">' + paymentInfoBlock + '</td>' +
     '</tr></table>' +
-    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">' +
+    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;table-layout:fixed;" cellpadding="0" cellspacing="0" border="0">' +
+    '<colgroup><col style="width:52%;" /><col style="width:10%;" /><col style="width:19%;" /><col style="width:19%;" /></colgroup>' +
     '<tr style="background:#f1f5f9;">' +
     '<th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Item</th>' +
     '<th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Qty</th>' +

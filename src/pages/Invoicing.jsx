@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Plus, Trash2, X, QrCode, Wallet, Landmark, Eye, Download, FileImage, FileText, CreditCard, Copy, Check, Timer as TimerIcon } from 'lucide-react'
+import { Search, Plus, Trash2, X, QrCode, Wallet, Landmark, Eye, FileImage, FileText, CreditCard, Copy, Check, Timer as TimerIcon } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { getInvoices, deleteInvoice, getContacts, getAvailableTickets, getExpiredInvoices, updateTransactionStatus } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { DEFAULT_TEMPLATE, loadTemplate } from './InvoiceTemplate'
+import { generateInvoiceHtml } from '../lib/invoiceHtml'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 import { useCurrency } from '../hooks/useCurrency.jsx'
 
@@ -137,119 +138,18 @@ function getPaymentDetail(invoice, template) {
 }
 
 function InvoicePreviewContent({ invoice, customer, template }) {
-  const { formatCurrency: fc } = useCurrencyFormatter()
-  const tpl = template
-  const statusColor = invoice.status === 'paid' ? '#16a34a' : invoice.status === 'cancelled' ? '#dc2626' : '#ca8a04'
-  const statusLabel = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)
-  const paymentDetail = getPaymentDetail(invoice, tpl)
-  const accent = tpl.accentColor || '#1e40af'
-  const taxAmount = invoice.totalAmount * (tpl.taxRate / 100)
-  const totalWithTax = invoice.totalAmount + taxAmount
-  const logoSrc = tpl.logoUrl
-
+  const previewInvoice = {
+    ...invoice,
+    customerName: customer?.name || invoice.customerName,
+    customerEmail: customer?.email || invoice.customerEmail,
+    customerPhone: customer?.phone || invoice.customerPhone,
+    customerAddress: customer?.address || invoice.customerAddress,
+  }
   return (
-    <div id="invoice-preview" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', background: '#fff', color: '#0f172a' }}>
-      <div style={{ padding: '40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', paddingBottom: '24px', borderBottom: `2px solid ${accent}` }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-              {logoSrc ? (
-                <img src={logoSrc} alt="Logo" style={{ width: 'auto', height: 'auto', maxWidth: 120, maxHeight: 60, objectFit: 'contain' }} />
-              ) : (
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: accent, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}>{tpl.logoInitial}</span>
-                </div>
-              )}
-              <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', color: accent }}>{tpl.companyName}</h1>
-            </div>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>{tpl.address}</p>
-            <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748b' }}>{tpl.email} | {tpl.phone}</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <h2 style={{ margin: 0, fontSize: '28px', fontWeight: '700', color: accent, letterSpacing: '1px' }}>INVOICE</h2>
-            <p style={{ margin: '8px 0 0', fontSize: '14px', fontWeight: '600', color: '#334155' }}>{invoice.transactionId}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Date: {invoice.dateTime}</p>
-            <span style={{ display: 'inline-block', marginTop: '8px', padding: '4px 16px', borderRadius: '9999px', fontSize: '12px', fontWeight: '600', color: statusColor, background: statusColor + '15', border: `1px solid ${statusColor}30` }}>
-              {statusLabel}
-            </span>
-          </div>
-        </div>
-
-        {invoice.itemName && (
-          <div style={{ marginBottom: '24px', padding: '12px 16px', background: '#f0f7ff', borderRadius: '8px', border: '1px solid #b3d9ff' }}>
-            <p style={{ margin: 0, fontSize: '13px', color: '#0066cc' }}>
-              <span style={{ fontWeight: 600 }}>Ticket:</span> {invoice.itemName}
-            </p>
-          </div>
-        )}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px', marginBottom: '40px' }}>
-          <div>
-            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8' }}>Bill To</p>
-            <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#0f172a' }}>{customer?.name || 'Walk-in Customer'}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>{customer?.email || '—'}</p>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>{customer?.phone || '—'}</p>
-            {customer?.address && <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b' }}>{customer.address}</p>}
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ margin: '0 0 8px', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8' }}>Payment Details</p>
-            {paymentDetail && (
-              <>
-                <p style={{ margin: 0, fontSize: '14px', color: '#334155' }}>
-                  <span style={{ fontWeight: '500' }}>Method:</span> {paymentDetail.label}
-                </p>
-                <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#334155' }}>
-                  <span style={{ fontWeight: '500' }}>Info:</span> {paymentDetail.detail}
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '32px' }}>
-          <thead>
-            <tr style={{ background: '#f1f5f9' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', borderBottom: '2px solid #e2e8f0' }}>Item</th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', borderBottom: '2px solid #e2e8f0' }}>Qty</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', borderBottom: '2px solid #e2e8f0' }}>Price/Unit</th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px', color: '#64748b', borderBottom: '2px solid #e2e8f0' }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style={{ padding: '16px', fontSize: '14px', borderBottom: '1px solid #e2e8f0' }}>
-                {invoice.itemName && <div style={{ fontWeight: 500, marginBottom: 2 }}>{invoice.itemName}</div>}
-                <div style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>{invoice.itemCode}</div>
-              </td>
-              <td style={{ padding: '16px', fontSize: '14px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>{invoice.quantity}</td>
-<td style={{ padding: '16px', fontSize: '14px', textAlign: 'right', borderBottom: '1px solid #e2e8f0' }}>{fc(invoice.pricePerUnit)}</td>
-               <td style={{ padding: '16px', fontSize: '14px', fontWeight: '600', textAlign: 'right', borderBottom: '1px solid #e2e8f0' }}>{fc(invoice.totalAmount)}</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '40px' }}>
-          <div style={{ width: '280px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '14px', color: '#64748b' }}>
-              <span>Subtotal</span>
- <span>{fc(invoice.totalAmount)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', fontSize: '14px', color: '#64748b' }}>
-                <span>Tax ({tpl.taxRate}%)</span>
-                <span>{fc(taxAmount)}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', marginTop: '8px', borderTop: `2px solid ${accent}`, fontSize: '18px', fontWeight: '700', color: accent }}>
-                <span>Total Due</span>
-                <span>{fc(totalWithTax)}</span>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ textAlign: 'center', paddingTop: '24px', borderTop: '1px solid #e2e8f0' }}>
-          <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>{tpl.footerText} | {tpl.companyName} | {tpl.website}</p>
-        </div>
-      </div>
-    </div>
+    <div
+      id="invoice-preview"
+      dangerouslySetInnerHTML={{ __html: generateInvoiceHtml(previewInvoice, template) }}
+    />
   )
 }
 
