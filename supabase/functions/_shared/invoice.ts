@@ -37,6 +37,18 @@ function invoiceLineItems(txn: any) {
   }]
 }
 
+function invoiceSummaryItem(txn: any) {
+  const lineItems = invoiceLineItems(txn)
+  const code = txn.itemCode || lineItems.map((item) => item.code).join(', ') || txn.unique_code || txn.transaction_id || '-'
+  return {
+    name: txn.item_name || txn.ticket_title || lineItems[0]?.name || 'Invoice Item',
+    code,
+    quantity: Number(txn.quantity || lineItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0) || 1),
+    price: Number(txn.price_per_unit || lineItems[0]?.price || 0),
+    total: Number(txn.total_amount || lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0)),
+  }
+}
+
 function summarizeInvoiceRows(rows: any[], ticket?: any) {
   if (!rows || rows.length === 0) return null
   const first = rows[0]
@@ -111,14 +123,14 @@ export function generateInvoiceHtml(
   const taxAmount = (txn.total_amount || 0) * (taxRate / 100)
   const totalWithTax = (txn.total_amount || 0) + taxAmount
   const statusColor = statusLabel === 'Paid' ? '#16a34a' : statusLabel === 'Cancelled' ? '#dc2626' : '#ca8a04'
-  const lineItems = invoiceLineItems(txn)
-  const itemRowsHtml = lineItems.map((item) => `
+  const summaryItem = invoiceSummaryItem(txn)
+  const itemRowsHtml = `
     <tr>
-      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${item.name}<br/><span style="font-size:10px;color:#94a3b8;font-family:monospace;">${item.code}</span></td>
-      <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${item.quantity}</td>
-      <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(item.price || 0).toLocaleString()}</td>
-      <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(item.total || 0).toLocaleString()}</td>
-    </tr>`).join('')
+      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;word-break:break-word;overflow-wrap:anywhere;">${summaryItem.name}<br/><span style="font-size:10px;color:#94a3b8;font-family:monospace;">${summaryItem.code}</span></td>
+      <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;">${summaryItem.quantity}</td>
+      <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">${cur}${Number(summaryItem.price || 0).toLocaleString()}</td>
+      <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">${cur}${Number(summaryItem.total || 0).toLocaleString()}</td>
+    </tr>`
 
   let paymentInfoHtml = ''
   if (paymentDetail) {
@@ -170,7 +182,13 @@ export function generateInvoiceHtml(
     </tr>
   </table>
 
-  <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+  <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;table-layout:fixed;" cellpadding="0" cellspacing="0" border="0">
+    <colgroup>
+      <col style="width:52%;" />
+      <col style="width:10%;" />
+      <col style="width:19%;" />
+      <col style="width:19%;" />
+    </colgroup>
     <tr style="background:#f1f5f9;">
       <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Item</th>
       <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Qty</th>
@@ -488,7 +506,7 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       yPos -= 36
     }
 
-    const lineItems = invoiceLineItems(inv)
+    const summaryItem = invoiceSummaryItem(inv)
 
     const tableWidth = width - margin * 2
     const cols = [
@@ -502,23 +520,21 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       drawText(col.header, col.x + 8, yPos - 6, fontBold, 8, rgb(0.392, 0.392, 0.482))
     }
     yPos -= 28
-    for (const item of lineItems) {
-      const qty = String(item.quantity || 1)
-      const priceText = `${cur}${Number(item.price || 0).toLocaleString()}`
-      const totalText = `${cur}${Number(item.total || 0).toLocaleString()}`
-      const nameLines = wrapText(item.name || 'Invoice Item', fontBold, 9, cols[0].w - 16)
-      const codeLines = wrapText(item.code || '-', font, 8, cols[0].w - 16)
-      const rowHeight = Math.max(30, 10 + (nameLines.length * 11) + (codeLines.length * 10))
+    const qty = String(summaryItem.quantity || 1)
+    const priceText = `${cur}${Number(summaryItem.price || 0).toLocaleString()}`
+    const totalText = `${cur}${Number(summaryItem.total || 0).toLocaleString()}`
+    const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 9, cols[0].w - 16)
+    const codeLines = wrapText(summaryItem.code || '-', font, 8, cols[0].w - 16)
+    const rowHeight = Math.max(34, 12 + (nameLines.length * 11) + (codeLines.length * 10))
 
-      drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
-      let itemY = yPos - 12
-      itemY -= drawWrappedText(item.name || 'Invoice Item', margin + 8, itemY, fontBold, 9, rgb(0.059, 0.059, 0.141), cols[0].w - 16, 11)
-      drawWrappedText(item.code || '-', margin + 8, itemY + 1, font, 8, rgb(0.392, 0.392, 0.482), cols[0].w - 16, 10)
-      drawText(qty, cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(qty, 10) / 2, yPos - 14, font, 10, rgb(0, 0, 0))
-      drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 10), yPos - 14, font, 10, rgb(0, 0, 0))
-      drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 10), yPos - 14, fontBold, 10, rgb(0, 0, 0))
-      yPos -= rowHeight
-    }
+    drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
+    let itemY = yPos - 12
+    itemY -= drawWrappedText(summaryItem.name || 'Invoice Item', margin + 8, itemY, fontBold, 9, rgb(0.059, 0.059, 0.141), cols[0].w - 16, 11)
+    drawWrappedText(summaryItem.code || '-', margin + 8, itemY + 1, font, 8, rgb(0.392, 0.392, 0.482), cols[0].w - 16, 10)
+    drawText(qty, cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(qty, 10) / 2, yPos - 14, font, 10, rgb(0, 0, 0))
+    drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 10), yPos - 14, font, 10, rgb(0, 0, 0))
+    drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 10), yPos - 14, fontBold, 10, rgb(0, 0, 0))
+    yPos -= rowHeight
 
     const totalX = width - margin - 200
     drawText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, totalX, yPos, font, 11, rgb(0.392, 0.392, 0.482))

@@ -64,6 +64,17 @@ function invoiceLineItems(invoice) {
   }]
 }
 
+function invoiceSummaryItem(invoice) {
+  const lineItems = invoiceLineItems(invoice)
+  return {
+    name: invoice.itemName || lineItems[0]?.name || 'Invoice Item',
+    code: invoice.itemCode || lineItems.map((item) => item.code).join(', ') || '-',
+    quantity: Number(invoice.quantity || lineItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0) || 1),
+    price: Number(invoice.pricePerUnit || lineItems[0]?.price || 0),
+    total: Number(invoice.totalAmount || lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0)),
+  }
+}
+
 function buildInvoiceElement(invoice, templateOverrides) {
   const tpl = { ...DEFAULT_TEMPLATE, ...(templateOverrides || {}) }
   if (!tpl.companyName) tpl.companyName = DEFAULT_TEMPLATE.companyName
@@ -80,23 +91,23 @@ function buildInvoiceElement(invoice, templateOverrides) {
   const taxAmount = (invoice.totalAmount || 0) * ((tpl.taxRate || 0) / 100)
   const totalWithTax = (invoice.totalAmount || 0) + taxAmount
   const cur = tpl.currencySymbol || '$'
-  const lineItems = invoiceLineItems(invoice)
+  const summaryItem = invoiceSummaryItem(invoice)
 
   const customerName = invoice.customerName || 'Walk-in Customer'
   const customerEmail = invoice.customerEmail || '—'
   const customerPhone = invoice.customerPhone || '—'
   const customerAddress = invoice.customerAddress || ''
-  const itemRowsHtml = lineItems.map((item) => `
+  const itemRowsHtml = `
       <tr>
-        <td style="padding:16px;font-size:14px;border-bottom:1px solid #e2e8f0;">
-          ${item.name ? `<div style="font-weight:500;margin-bottom:2px;">${item.name}</div>` : ''}
-          <div style="font-family:monospace;font-size:12px;color:#64748b;">${item.code || '-'}</div>
+        <td style="padding:16px;font-size:14px;border-bottom:1px solid #e2e8f0;word-break:break-word;overflow-wrap:anywhere;">
+          ${summaryItem.name ? `<div style="font-weight:500;margin-bottom:2px;">${summaryItem.name}</div>` : ''}
+          <div style="font-family:monospace;font-size:12px;color:#64748b;">${summaryItem.code || '-'}</div>
         </td>
-        <td style="padding:16px;font-size:14px;text-align:center;border-bottom:1px solid #e2e8f0;">${item.quantity || 1}</td>
-        <td style="padding:16px;font-size:14px;text-align:right;border-bottom:1px solid #e2e8f0;">${formatCurrency(item.price, cur)}</td>
-        <td style="padding:16px;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #e2e8f0;">${formatCurrency(item.total, cur)}</td>
+        <td style="padding:16px;font-size:14px;text-align:center;border-bottom:1px solid #e2e8f0;white-space:nowrap;">${summaryItem.quantity || 1}</td>
+        <td style="padding:16px;font-size:14px;text-align:right;border-bottom:1px solid #e2e8f0;white-space:nowrap;">${formatCurrency(summaryItem.price, cur)}</td>
+        <td style="padding:16px;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #e2e8f0;white-space:nowrap;">${formatCurrency(summaryItem.total, cur)}</td>
       </tr>
-  `).join('')
+  `
 
   const container = document.createElement('div')
   container.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;background:#fff;font-family:system-ui,-apple-system,sans-serif;color:#0f172a;'
@@ -144,7 +155,13 @@ function buildInvoiceElement(invoice, templateOverrides) {
     </div>
   </div>
 
-  <table style="width:100%;border-collapse:collapse;margin-bottom:32px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:32px;table-layout:fixed;">
+    <colgroup>
+      <col style="width:52%;" />
+      <col style="width:10%;" />
+      <col style="width:19%;" />
+      <col style="width:19%;" />
+    </colgroup>
     <thead>
       <tr style="background:#f1f5f9;">
         <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#64748b;border-bottom:2px solid #e2e8f0;">Item</th>

@@ -59,6 +59,17 @@ function invoiceLineItems(invoice) {
   }]
 }
 
+function invoiceSummaryItem(invoice) {
+  const lineItems = invoiceLineItems(invoice)
+  return {
+    name: invoice.itemName || lineItems[0]?.name || 'Invoice Item',
+    code: invoice.itemCode || lineItems.map((item) => item.code).join(', ') || '-',
+    quantity: Number(invoice.quantity || lineItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0) || 1),
+    price: Number(invoice.pricePerUnit || lineItems[0]?.price || 0),
+    total: Number(invoice.totalAmount || lineItems.reduce((sum, item) => sum + Number(item.total || 0), 0)),
+  }
+}
+
 function logoCell(accent, logoSrc, logoInitial) {
   if (logoSrc) {
     return '<td style="vertical-align:middle;padding-right:8px;"><img src="' + esc(logoSrc) + '" alt="Logo" width="120" height="48" style="display:block;border:0;max-width:120px;max-height:48px;" /></td>'
@@ -81,7 +92,7 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
   const taxAmount = (invoice.totalAmount || 0) * ((tpl.taxRate || 0) / 100)
   const totalWithTax = (invoice.totalAmount || 0) + taxAmount
   const cur = tpl.currencySymbol || '$'
-  const lineItems = invoiceLineItems(invoice)
+  const summaryItem = invoiceSummaryItem(invoice)
 
   const customerName = invoice.customerName || 'Walk-in Customer'
   const customerEmail = invoice.customerEmail || '—'
@@ -113,17 +124,17 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     taxRowHtml = '<tr><td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Tax (' + esc(String(tpl.taxRate)) + '%)</td><td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">' + cur + taxAmount.toLocaleString() + '</td></tr>'
   }
 
-  const itemRowsHtml = lineItems.map((item) => (
+  const itemRowsHtml = (
     '<tr>' +
-    '<td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">' +
-    (item.name ? '<div style="font-weight:600;margin-bottom:1px;">' + esc(item.name) + '</div>' : '') +
-    '<span style="font-family:monospace;font-size:11px;color:#64748b;">' + esc(item.code || '-') + '</span>' +
+    '<td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;word-break:break-word;overflow-wrap:anywhere;">' +
+    (summaryItem.name ? '<div style="font-weight:600;margin-bottom:1px;">' + esc(summaryItem.name) + '</div>' : '') +
+    '<span style="font-family:monospace;font-size:11px;color:#64748b;">' + esc(summaryItem.code || '-') + '</span>' +
     '</td>' +
-    '<td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">' + esc(String(item.quantity || 1)) + '</td>' +
-    '<td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">' + cur + Number(item.price || 0).toLocaleString() + '</td>' +
-    '<td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">' + cur + Number(item.total || 0).toLocaleString() + '</td>' +
+    '<td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;">' + esc(String(summaryItem.quantity || 1)) + '</td>' +
+    '<td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">' + cur + Number(summaryItem.price || 0).toLocaleString() + '</td>' +
+    '<td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">' + cur + Number(summaryItem.total || 0).toLocaleString() + '</td>' +
     '</tr>'
-  )).join('')
+  )
   const subtotalStr = cur + Number(invoice.totalAmount || 0).toLocaleString()
   const totalWithTaxStr = cur + totalWithTax.toLocaleString()
 
@@ -145,7 +156,8 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     '<span style="display:inline-block;margin-top:6px;padding:2px 12px;border-radius:10px;font-size:11px;font-weight:600;color:' + esc(statusColor) + ';border:1px solid ' + esc(statusColor) + '30;">' + esc(statusLabel) + '</span>' +
     '</td></tr></table>' +
     ticketNameHtml +
-    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">' +
+    '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;table-layout:fixed;" cellpadding="0" cellspacing="0" border="0">' +
+    '<colgroup><col style="width:52%;" /><col style="width:10%;" /><col style="width:19%;" /><col style="width:19%;" /></colgroup>' +
     '<tr>' +
     '<td style="width:50%;vertical-align:top;">' +
     '<p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Bill To</p>' +
