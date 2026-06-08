@@ -33,6 +33,32 @@ function getPaymentDetail(invoice, tpl) {
   return null
 }
 
+function invoiceLineItems(invoice) {
+  const codes = Array.isArray(invoice.uniqueCodes) && invoice.uniqueCodes.length > 0
+    ? invoice.uniqueCodes
+    : Array.isArray(invoice.ticketDetails) && invoice.ticketDetails.length > 0
+      ? invoice.ticketDetails.map((ticket) => ticket.uniqueCode)
+      : []
+
+  if (codes.length > 0) {
+    return codes.map((code) => ({
+      name: invoice.itemName || 'Invoice Item',
+      code: code || '-',
+      quantity: 1,
+      price: Number(invoice.pricePerUnit || 0),
+      total: Number(invoice.pricePerUnit || 0),
+    }))
+  }
+
+  return [{
+    name: invoice.itemName || 'Invoice Item',
+    code: invoice.itemCode || '-',
+    quantity: Number(invoice.quantity) || 1,
+    price: Number(invoice.pricePerUnit || 0),
+    total: Number(invoice.totalAmount || 0),
+  }]
+}
+
 function logoCell(accent, logoSrc, logoInitial) {
   if (logoSrc) {
     return '<td style="vertical-align:middle;padding-right:8px;"><img src="' + esc(logoSrc) + '" alt="Logo" width="120" height="48" style="display:block;border:0;max-width:120px;max-height:48px;" /></td>'
@@ -55,6 +81,7 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
   const taxAmount = (invoice.totalAmount || 0) * ((tpl.taxRate || 0) / 100)
   const totalWithTax = (invoice.totalAmount || 0) + taxAmount
   const cur = tpl.currencySymbol || '$'
+  const lineItems = invoiceLineItems(invoice)
 
   const customerName = invoice.customerName || 'Walk-in Customer'
   const customerEmail = invoice.customerEmail || '—'
@@ -81,18 +108,22 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
       '<p style="margin:4px 0 0;font-size:13px;color:#334155;"><strong>Info:</strong> ' + esc(paymentDetail.detail) + '</p>'
   }
 
-  let itemNameHtml = ''
-  if (invoice.itemName) {
-    itemNameHtml = '<div style="font-weight:600;margin-bottom:1px;">' + esc(invoice.itemName) + '</div>'
-  }
-
   let taxRowHtml = ''
   if ((tpl.taxRate || 0) > 0) {
     taxRowHtml = '<tr><td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Tax (' + esc(String(tpl.taxRate)) + '%)</td><td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">' + cur + taxAmount.toLocaleString() + '</td></tr>'
   }
 
-  const priceStr = cur + Number(invoice.pricePerUnit || 0).toLocaleString()
-  const totalStr = cur + Number(invoice.totalAmount || 0).toLocaleString()
+  const itemRowsHtml = lineItems.map((item) => (
+    '<tr>' +
+    '<td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">' +
+    (item.name ? '<div style="font-weight:600;margin-bottom:1px;">' + esc(item.name) + '</div>' : '') +
+    '<span style="font-family:monospace;font-size:11px;color:#64748b;">' + esc(item.code || '-') + '</span>' +
+    '</td>' +
+    '<td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">' + esc(String(item.quantity || 1)) + '</td>' +
+    '<td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">' + cur + Number(item.price || 0).toLocaleString() + '</td>' +
+    '<td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">' + cur + Number(item.total || 0).toLocaleString() + '</td>' +
+    '</tr>'
+  )).join('')
   const subtotalStr = cur + Number(invoice.totalAmount || 0).toLocaleString()
   const totalWithTaxStr = cur + totalWithTax.toLocaleString()
 
@@ -131,15 +162,7 @@ export function generateInvoiceHtml(invoice, templateOverrides) {
     '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Price/Unit</th>' +
     '<th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>' +
     '</tr>' +
-    '<tr>' +
-    '<td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">' +
-    itemNameHtml +
-    '<span style="font-family:monospace;font-size:11px;color:#64748b;">' + esc(invoice.itemCode || '-') + '</span>' +
-    '</td>' +
-    '<td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">' + esc(String(invoice.quantity)) + '</td>' +
-    '<td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">' + priceStr + '</td>' +
-    '<td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">' + totalStr + '</td>' +
-    '</tr></table>' +
+    itemRowsHtml + '</table>' +
     '<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">' +
     '<tr><td style="width:60%;"></td><td style="width:40%;">' +
     '<table role="presentation" style="width:100%;border-collapse:collapse;" cellpadding="0" cellspacing="0" border="0">' +

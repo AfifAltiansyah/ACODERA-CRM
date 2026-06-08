@@ -17,6 +17,78 @@ function resolveTemplate(template: any) {
   return tpl
 }
 
+function invoiceLineItems(txn: any) {
+  if (Array.isArray(txn.lineItems) && txn.lineItems.length > 0) {
+    return txn.lineItems.map((item: any) => ({
+      name: item.name || txn.item_name || txn.ticket_title || 'Invoice Item',
+      code: item.code || item.unique_code || '-',
+      quantity: Number(item.quantity || 1),
+      price: Number(item.price_per_unit ?? item.pricePerUnit ?? txn.price_per_unit ?? 0),
+      total: Number(item.total_amount ?? item.totalAmount ?? item.price_per_unit ?? item.pricePerUnit ?? txn.price_per_unit ?? 0),
+    }))
+  }
+
+  return [{
+    name: txn.item_name || txn.ticket_title || 'Invoice Item',
+    code: txn.itemCode || txn.unique_code || txn.transaction_id || '-',
+    quantity: Number(txn.quantity || 1),
+    price: Number(txn.price_per_unit || txn.total_amount || 0),
+    total: Number(txn.total_amount || 0),
+  }]
+}
+
+function summarizeInvoiceRows(rows: any[], ticket?: any) {
+  if (!rows || rows.length === 0) return null
+  const first = rows[0]
+  const ticketTitle = ticket?.title || first.item_name || first.ticket_title || ''
+  const lineItems = rows.map((row) => ({
+    name: ticketTitle || row.item_name || row.ticket_title || 'Invoice Item',
+    code: row.unique_code || row.itemCode || '-',
+    quantity: Number(row.quantity || 1),
+    price_per_unit: Number(row.price_per_unit || 0),
+    total_amount: Number(row.total_amount || row.price_per_unit || 0),
+    barcode: row.barcode || '',
+  }))
+  const quantity = lineItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0)
+  const totalAmount = lineItems.reduce((sum, item) => sum + Number(item.total_amount || 0), 0)
+
+  return {
+    ...first,
+    quantity,
+    total_amount: totalAmount,
+    price_per_unit: Number(first.price_per_unit || 0),
+    itemCode: lineItems.map((item) => item.code).join(', '),
+    unique_code: first.unique_code,
+    item_name: ticketTitle || first.item_name || first.ticket_title || '',
+    ticket_title: ticketTitle || first.ticket_title || '',
+    lineItems,
+  }
+}
+
+export async function normalizeInvoiceByTransactionId(supabase: any, transactionId: string) {
+  const { data: rows, error } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_id', String(transactionId))
+    .order('unique_code', { ascending: true })
+
+  if (error) throw error
+  if (!rows || rows.length === 0) return null
+
+  let ticket: any = null
+  const ticketId = rows[0].ticket_id
+  if (ticketId) {
+    const { data } = await supabase
+      .from('tickets')
+      .select('title, abbreviation')
+      .eq('id', ticketId)
+      .single()
+    ticket = data || null
+  }
+
+  return summarizeInvoiceRows(rows, ticket)
+}
+
 export function generateInvoiceHtml(
   txn: any, template: any, statusLabel: string, branchId?: string
 ) {
@@ -39,8 +111,14 @@ export function generateInvoiceHtml(
   const taxAmount = (txn.total_amount || 0) * (taxRate / 100)
   const totalWithTax = (txn.total_amount || 0) + taxAmount
   const statusColor = statusLabel === 'Paid' ? '#16a34a' : statusLabel === 'Cancelled' ? '#dc2626' : '#ca8a04'
-  const itemCode = txn.itemCode || txn.unique_code || txn.transaction_id || '-'
-  const itemName = txn.item_name || txn.ticket_title || 'Invoice Item'
+  const lineItems = invoiceLineItems(txn)
+  const itemRowsHtml = lineItems.map((item) => `
+    <tr>
+      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${item.name}<br/><span style="font-size:10px;color:#94a3b8;font-family:monospace;">${item.code}</span></td>
+      <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${item.quantity}</td>
+      <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(item.price || 0).toLocaleString()}</td>
+      <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(item.total || 0).toLocaleString()}</td>
+    </tr>`).join('')
 
   let paymentInfoHtml = ''
   if (paymentDetail) {
@@ -99,12 +177,7 @@ export function generateInvoiceHtml(
       <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Price/Unit</th>
       <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>
     </tr>
-    <tr>
-      <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;">${itemName}<br/><span style="font-size:10px;color:#94a3b8;font-family:monospace;">${itemCode}</span></td>
-      <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;">${txn.quantity || 1}</td>
-      <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.price_per_unit || txn.total_amount || 0).toLocaleString()}</td>
-      <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;">${cur}${Number(txn.total_amount || 0).toLocaleString()}</td>
-    </tr>
+    ${itemRowsHtml}
   </table>
 
   <table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
@@ -156,7 +229,9 @@ export function generateInvoiceReminderHtml(
   const cur = tpl.currencySymbol
   const customerName = txn.buyer_name || 'Customer'
   const paymentDetail = getPaymentDetail(txn.payment_method || '', txn.payment_detail || '', companyName, branchId)
-  const itemName = txn.itemCode || txn.unique_code || txn.transaction_id || 'Invoice Item'
+  const lineItems = invoiceLineItems(txn)
+  const itemName = txn.item_name || txn.ticket_title || lineItems[0]?.name || 'Invoice Item'
+  const itemCode = lineItems.map((item) => item.code).join(', ')
   const taxAmount = (txn.total_amount || 0) * (taxRate / 100)
   const totalWithTax = (txn.total_amount || 0) + taxAmount
 
@@ -373,10 +448,7 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       yPos -= 36
     }
 
-    const itemCode = inv.itemCode || inv.unique_code || '-'
-    const qty = inv.quantity || 1
-    const priceText = `${cur}${Number(inv.price_per_unit || 0).toLocaleString()}`
-    const totalText = `${cur}${Number(inv.total_amount || 0).toLocaleString()}`
+    const lineItems = invoiceLineItems(inv)
 
     drawRect(margin, yPos - 22, width - margin * 2, 22, rgb(0.945, 0.961, 0.976))
     const cols = [
@@ -389,12 +461,17 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       drawText(col.header, col.x + 8, yPos - 6, fontBold, 8, rgb(0.392, 0.392, 0.482))
     }
     yPos -= 28
-    drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
-    drawText(itemCode, margin + 8, yPos - 14, font, 11, rgb(0.392, 0.392, 0.482))
-    drawText(String(qty), cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(String(qty), 11) / 2, yPos - 14, font, 11, rgb(0, 0, 0))
-    drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 11), yPos - 14, font, 11, rgb(0, 0, 0))
-    drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 11), yPos - 14, fontBold, 11, rgb(0, 0, 0))
-    yPos -= 28
+    for (const item of lineItems) {
+      const qty = String(item.quantity || 1)
+      const priceText = `${cur}${Number(item.price || 0).toLocaleString()}`
+      const totalText = `${cur}${Number(item.total || 0).toLocaleString()}`
+      drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
+      drawText(item.code || '-', margin + 8, yPos - 14, font, 9, rgb(0.392, 0.392, 0.482))
+      drawText(qty, cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(qty, 10) / 2, yPos - 14, font, 10, rgb(0, 0, 0))
+      drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 10), yPos - 14, font, 10, rgb(0, 0, 0))
+      drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 10), yPos - 14, fontBold, 10, rgb(0, 0, 0))
+      yPos -= 24
+    }
 
     const totalX = width - margin - 200
     drawText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, totalX, yPos, font, 11, rgb(0.392, 0.392, 0.482))

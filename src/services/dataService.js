@@ -822,22 +822,6 @@ export async function addInvoice(invoice) {
       if (updateError) throw updateError
     }
 
-    const invoiceForPdf = {
-      transactionId,
-      totalAmount: Number(invoice.pricePerUnit) * qty,
-      customerName: invoice.customerName || '',
-      customerEmail: invoice.customerEmail || '',
-      customerPhone: invoice.customerPhone || '',
-      pricePerUnit: Number(invoice.pricePerUnit),
-      quantity: qty,
-      itemCode: `TKT-${transactionId}`,
-      itemName: invoice.itemName || '',
-      dateTime: now.toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }),
-      status: invoice.status || 'pending',
-      paymentMethod: invoice.paymentMethod || '',
-      paymentDetail: invoice.paymentDetail || '',
-    }
-
     if ((invoice.status || 'pending') !== 'paid') {
       triggerAutomationEvent('ticket.purchased', {
         contact_email: invoice.customerEmail,
@@ -1241,6 +1225,7 @@ export async function updateTransactionStatus(transactionId, newStatus) {
 
   const current = rows[0]
   const oldStatus = current.status
+  const invoiceTotal = rows.reduce((sum, row) => sum + Number(row.total_amount || 0), 0)
 
   const { error } = await supabase
     .from('transactions').update({ status: newStatus }).eq('transaction_id', transactionId)
@@ -1253,28 +1238,16 @@ export async function updateTransactionStatus(transactionId, newStatus) {
       contact_name: current.buyer_name,
       data: {
         invoice_id: current.transaction_id,
-        amount: current.total_amount,
         buyer_email: current.buyer_email,
         buyer_name: current.buyer_name,
-        buyer_phone: current.buyer_phone || '',
-        itemName: current.item_name || current.unique_code || '',
-        itemCode: current.unique_code || '',
-        quantity: String(current.quantity || 1),
-        pricePerUnit: String(Number(current.price_per_unit)),
-        totalAmount: String(Number(current.total_amount)),
-        paymentMethod: current.payment_method || '',
-        paymentDetail: current.payment_detail || '',
-        ticket: current.unique_code,
         transaction_id: current.transaction_id,
         status: 'paid',
-        purchased_at: current.purchased_at,
-        created_at: current.created_at,
         branch: current.branch,
       },
     })
     insertNotification({
       type: 'invoice', title: 'Invoice paid',
-      message: `${current.transaction_id} — Rp${(Number(current.total_amount) || 0).toLocaleString()}`,
+      message: `${current.transaction_id} — Rp${invoiceTotal.toLocaleString()}`,
       entityId: current.transaction_id,
       link: `/dashboard/invoicing/${current.transaction_id}`,
     })
@@ -1286,23 +1259,16 @@ export async function updateTransactionStatus(transactionId, newStatus) {
       contact_name: current.buyer_name,
       data: {
         invoice_id: current.transaction_id,
-        amount: current.total_amount,
         buyer_email: current.buyer_email,
         buyer_name: current.buyer_name,
-        buyer_phone: current.buyer_phone || '',
-        itemName: current.item_name || current.unique_code || '',
-        quantity: String(current.quantity || 1),
-        pricePerUnit: String(Number(current.price_per_unit)),
-        totalAmount: String(Number(current.total_amount)),
         transaction_id: current.transaction_id,
         status: 'cancelled',
-        purchased_at: current.purchased_at,
         branch: current.branch,
       },
     })
     insertNotification({
       type: 'invoice', title: 'Invoice cancelled',
-      message: `${current.transaction_id} — Rp${(Number(current.total_amount) || 0).toLocaleString()}`,
+      message: `${current.transaction_id} — Rp${invoiceTotal.toLocaleString()}`,
       entityId: current.transaction_id,
       link: `/dashboard/invoicing/${current.transaction_id}`,
     })

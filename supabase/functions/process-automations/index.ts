@@ -120,6 +120,7 @@ serve(async (req) => {
                       inv.itemCode = inv.itemCode || tk.abbreviation || ''
                     }
                   } catch { /* ignore */ }
+                  inv = await aggregateInvoice(supabase, inv)
                 }
                 if (inv.branch) await refreshPaymentOptions(inv.branch)
                 const invoiceTemplate = await fetchInvoiceTemplate(supabase, inv.branch)
@@ -183,13 +184,23 @@ serve(async (req) => {
         .eq('transaction_id', inv.transaction_id)
         .order('unique_code', { ascending: true })
       if (!siblings || siblings.length <= 1) return inv
-      // Merge: quantity = row count, total = sum, codes = joined
+      const ticketTitle = inv.item_name || inv.ticket_title || ''
+      const lineItems = siblings.map((row: any) => ({
+        name: ticketTitle || row.item_name || row.ticket_title || 'Invoice Item',
+        code: row.unique_code || row.itemCode || '-',
+        quantity: Number(row.quantity || 1),
+        price_per_unit: Number(row.price_per_unit || 0),
+        total_amount: Number(row.total_amount || row.price_per_unit || 0),
+        barcode: row.barcode || '',
+      }))
+      // Merge: quantity = row count, total = sum, codes/items = joined
       return {
         ...inv,
-        quantity: siblings.length,
-        total_amount: siblings.reduce((s: number, r: any) => s + Number(r.total_amount || 0), 0),
-        itemCode: siblings.map((r: any) => r.unique_code).join(', '),
+        quantity: lineItems.reduce((s: number, item: any) => s + Number(item.quantity || 1), 0),
+        total_amount: lineItems.reduce((s: number, item: any) => s + Number(item.total_amount || 0), 0),
+        itemCode: lineItems.map((item: any) => item.code).join(', '),
         price_per_unit: Number(inv.price_per_unit || 0),
+        lineItems,
       }
     }
 
@@ -208,7 +219,7 @@ serve(async (req) => {
 
       if (pendingInvoices && pendingInvoices.length > 0) {
         const seen = new Set<string>()
-          for (const inv of pendingInvoices) {
+        for (let inv of pendingInvoices) {
           if (!inv.buyer_email || seen.has(inv.buyer_email)) continue
           seen.add(inv.buyer_email)
 
@@ -299,7 +310,7 @@ serve(async (req) => {
 
       if (recentInvoices && recentInvoices.length > 0) {
         const seen = new Set<string>()
-        for (const inv of recentInvoices) {
+        for (let inv of recentInvoices) {
           if (!inv.buyer_email || seen.has(inv.buyer_email)) continue
           seen.add(inv.buyer_email)
 

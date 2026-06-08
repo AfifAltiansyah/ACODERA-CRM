@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Zap, ArrowLeft, Mail, Send, History, Copy, Check, ChevronDown, ChevronUp, FileText, Clock } from 'lucide-react'
 import { getAutomations, toggleAutomation, deleteAutomation, getAutomationLogs, sendAutomationEmail, scheduleAutomationEmail, getScheduledEmails, getContacts, getPendingInvoices } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
-import { generateInvoiceHtml, generateInvoiceReminderHtml } from '../lib/invoiceHtml'
+import { generateInvoiceReminderHtml } from '../lib/invoiceHtml'
 import { generateInvoicePdfBase64 } from '../lib/generateInvoicePdf'
 import { loadTemplate } from './InvoiceTemplate'
 
@@ -147,22 +146,17 @@ export function AutomationDetailPage() {
       const invoices = await getPendingInvoices()
       if (invoices.length === 0) { setSendResult({ success: false, message: 'No unpaid invoices.' }); setSending(false); return }
       const template = await loadTemplate()
-      const grouped = {}
+      let sent = 0, failed = 0
       for (const inv of invoices) {
         if (!inv.customerEmail) continue
-        if (!grouped[inv.customerEmail]) grouped[inv.customerEmail] = []
-        grouped[inv.customerEmail].push(inv)
-      }
-      let sent = 0, failed = 0
-      for (const [email, invs] of Object.entries(grouped)) {
         try {
-          const pdfBase64 = await generateInvoicePdfBase64(invs[0], template)
+          const pdfBase64 = await generateInvoicePdfBase64(inv, template)
           await sendAutomationEmail({
-            to: email, fromName: automation.fromName || template.companyName || 'Acodera CRM',
-            subject: automation.subject || `Payment Reminder - ${invs[0].transactionId}`,
-            body: automation.body || generateInvoiceReminderHtml(invs[0], template),
+            to: inv.customerEmail, fromName: automation.fromName || template.companyName || 'Acodera CRM',
+            subject: automation.subject || `Payment Reminder - ${inv.transactionId}`,
+            body: automation.body || generateInvoiceReminderHtml(inv, template),
             automationId: automation.id,
-            attachments: [{ name: `Invoice-${invs[0].transactionId}.pdf`, content: pdfBase64 }],
+            attachments: [{ name: `Invoice-${inv.transactionId}.pdf`, content: pdfBase64 }],
           })
           sent++
         } catch { failed++ }

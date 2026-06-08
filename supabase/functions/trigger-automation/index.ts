@@ -8,6 +8,7 @@ import {
   generateInvoicePdf,
   replaceTemplateVars,
   fetchInvoiceTemplate,
+  normalizeInvoiceByTransactionId,
   logEmailResult,
 } from '../_shared/invoice.ts'
 
@@ -18,12 +19,18 @@ const corsHeaders = {
 
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET')
+const DEBUG_INVOICE_EMAIL = Deno.env.get('DEBUG_INVOICE_EMAIL') === 'true'
 
 function corsResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
+}
+
+function debugInvoiceLog(label: string, payload: unknown) {
+  if (!DEBUG_INVOICE_EMAIL) return
+  console.log(`[invoice-debug] ${label}`, JSON.stringify(payload, null, 2))
 }
 
 serve(async (req) => {
@@ -165,21 +172,8 @@ serve(async (req) => {
           let invoiceId = extraData.invoice_id as string | undefined
 
           if (invoiceId) {
-            const { data: rows } = await supabase
-              .from('transactions')
-              .select('*')
-              .eq('transaction_id', String(invoiceId))
-              .order('unique_code', { ascending: true })
-
-            if (rows && rows.length > 0) {
-              txnData = { ...rows[0] }
-              // Aggregate from all rows for multi-ticket invoices
-              txnData.quantity = rows.length
-              txnData.total_amount = rows.reduce((sum: number, r: any) => sum + Number(r.total_amount || 0), 0)
-              txnData.itemCode = rows.map((r: any) => r.unique_code).join(', ')
-              txnData.unique_code = rows[0].unique_code
-              txnData.price_per_unit = Number(rows[0].price_per_unit || 0)
-            }
+            txnData = await normalizeInvoiceByTransactionId(supabase, String(invoiceId))
+            debugInvoiceLog('normalized invoice data', txnData)
           }
 
           if (!txnData && extraData.buyer_email) {
@@ -196,16 +190,23 @@ serve(async (req) => {
           }
 
           if (txnData) {
-            txnData.item_name = extraData.itemName || extraData.item_name || txnData.item_name || ''
-            txnData.ticket_title = extraData.ticket_title || txnData.ticket_title || ''
-            // extraData overrides the DB aggregation for non-ticket invoices
-            if (extraData.quantity != null) txnData.quantity = Number(extraData.quantity)
-            if (extraData.totalAmount != null) txnData.total_amount = Number(extraData.totalAmount)
-            if (extraData.pricePerUnit != null) txnData.price_per_unit = Number(extraData.pricePerUnit)
-            if (extraData.itemCode) txnData.itemCode = extraData.itemCode
+            const hasCanonicalInvoice = Boolean(invoiceId)
+            const isTicketInvoice = Boolean(txnData.ticket_id)
+
+            if (!isTicketInvoice || !hasCanonicalInvoice) {
+              txnData.item_name = extraData.itemName || extraData.item_name || txnData.item_name || ''
+              txnData.ticket_title = extraData.ticket_title || txnData.ticket_title || ''
+            }
+
+            if (!hasCanonicalInvoice) {
+              if (extraData.quantity != null) txnData.quantity = Number(extraData.quantity)
+              if (extraData.totalAmount != null) txnData.total_amount = Number(extraData.totalAmount)
+              if (extraData.pricePerUnit != null) txnData.price_per_unit = Number(extraData.pricePerUnit)
+              if (extraData.itemCode) txnData.itemCode = extraData.itemCode
+            }
             if (extraData.transaction_id) txnData.transaction_id = String(extraData.transaction_id)
 
-            if (txnData.ticket_id) {
+            if (txnData.ticket_id && !txnData.ticket_title) {
               try {
                 const { data: tk } = await supabase
                   .from('tickets')
@@ -243,6 +244,7 @@ serve(async (req) => {
                   ? `Invoice Cancelled - ${txnData.transaction_id}`
                   : `Invoice Created - ${txnData.transaction_id}`)
 
+            debugInvoiceLog('pdf payload', txnData)
             serverPdfBase64 = await generateInvoicePdf(txnData, invoiceTemplate, txnData.branch)
             if (serverPdfBase64) {
               console.log('[trigger-automation] PDF generated server-side for', txnData.transaction_id, 'length:', serverPdfBase64.length)
@@ -308,6 +310,7 @@ serve(async (req) => {
 
             if (emailAttachments) {
               console.log('[trigger-automation] Attaching PDF:', emailAttachments[0].name, 'size:', emailAttachments[0].content.length)
+              debugInvoiceLog('brevo attachment metadata', { to: email, name: emailAttachments[0].name, size: emailAttachments[0].content.length })
             } else {
               console.warn('[trigger-automation] No PDF attachment available for', email)
             }
