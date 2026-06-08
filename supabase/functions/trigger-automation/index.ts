@@ -161,6 +161,7 @@ serve(async (req) => {
       let subject = auto.subject || `Notification: ${event}`
       let htmlBody = auto.body || `<p>${subject}</p>`
       const fromName = auto.from_name || 'Acodera CRM'
+      const hasCustomBody = typeof auto.body === 'string' && auto.body.trim() !== ''
 
       const isInvoiceEvent = event === 'invoice.created' || event === 'invoice.paid' || event === 'invoice.overdue' || event === 'invoice.cancelled'
       let invoiceTemplate: any = payloadTemplate || null
@@ -231,10 +232,12 @@ serve(async (req) => {
 
             const statusLabel = event === 'invoice.paid' ? 'Paid' : event === 'invoice.overdue' ? 'Overdue' : event === 'invoice.cancelled' ? 'Cancelled' : 'Pending'
 
-            if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
-              htmlBody = generateInvoiceReminderHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
-            } else {
-              htmlBody = generateInvoiceHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
+            if (!hasCustomBody) {
+              if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
+                htmlBody = generateInvoiceReminderHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
+              } else {
+                htmlBody = generateInvoiceHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
+              }
             }
             subject = auto.subject || (event === 'invoice.paid'
               ? `Payment Received - ${txnData.transaction_id}`

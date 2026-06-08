@@ -348,6 +348,46 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     function drawText(text: string, x: number, y: number, fnt: any, size: number, color: any) {
       page.drawText(text, { x, y, font: fnt, size, color: color || rgb(0, 0, 0) })
     }
+    function wrapText(text: string, fnt: any, size: number, maxWidth: number): string[] {
+      const source = String(text || '')
+      if (!source) return ['']
+      const lines: string[] = []
+      const words = source.split(/\s+/)
+
+      for (const word of words) {
+        const chunks: string[] = []
+        let chunk = ''
+        for (const char of word) {
+          const next = chunk + char
+          if (chunk && fnt.widthOfTextAtSize(next, size) > maxWidth) {
+            chunks.push(chunk)
+            chunk = char
+          } else {
+            chunk = next
+          }
+        }
+        if (chunk) chunks.push(chunk)
+
+        for (const part of chunks) {
+          const last = lines[lines.length - 1] || ''
+          const nextLine = last ? `${last} ${part}` : part
+          if (last && fnt.widthOfTextAtSize(nextLine, size) <= maxWidth) {
+            lines[lines.length - 1] = nextLine
+          } else {
+            lines.push(part)
+          }
+        }
+      }
+
+      return lines.length > 0 ? lines : ['']
+    }
+    function drawWrappedText(text: string, x: number, y: number, fnt: any, size: number, color: any, maxWidth: number, lineHeight = size + 2) {
+      const lines = wrapText(text, fnt, size, maxWidth)
+      lines.forEach((line, index) => {
+        drawText(line, x, y - index * lineHeight, fnt, size, color)
+      })
+      return lines.length * lineHeight
+    }
     function drawRect(x: number, y: number, w: number, h: number, fillColor: any) {
       page.drawRectangle({ x, y, width: w, height: h, color: fillColor })
     }
@@ -450,13 +490,14 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
 
     const lineItems = invoiceLineItems(inv)
 
-    drawRect(margin, yPos - 22, width - margin * 2, 22, rgb(0.945, 0.961, 0.976))
+    const tableWidth = width - margin * 2
     const cols = [
-      { header: 'Item', x: margin, w: width * 0.4 },
-      { header: 'Qty', x: margin + width * 0.4, w: width * 0.1 },
-      { header: 'Price/Unit', x: margin + width * 0.5, w: width * 0.2 },
-      { header: 'Total', x: margin + width * 0.7, w: width * 0.2 },
+      { header: 'Item', x: margin, w: 240 },
+      { header: 'Qty', x: margin + 240, w: 48 },
+      { header: 'Price/Unit', x: margin + 288, w: 92 },
+      { header: 'Total', x: margin + 380, w: tableWidth - 380 },
     ]
+    drawRect(margin, yPos - 22, tableWidth, 22, rgb(0.945, 0.961, 0.976))
     for (const col of cols) {
       drawText(col.header, col.x + 8, yPos - 6, fontBold, 8, rgb(0.392, 0.392, 0.482))
     }
@@ -465,12 +506,18 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       const qty = String(item.quantity || 1)
       const priceText = `${cur}${Number(item.price || 0).toLocaleString()}`
       const totalText = `${cur}${Number(item.total || 0).toLocaleString()}`
+      const nameLines = wrapText(item.name || 'Invoice Item', fontBold, 9, cols[0].w - 16)
+      const codeLines = wrapText(item.code || '-', font, 8, cols[0].w - 16)
+      const rowHeight = Math.max(30, 10 + (nameLines.length * 11) + (codeLines.length * 10))
+
       drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
-      drawText(item.code || '-', margin + 8, yPos - 14, font, 9, rgb(0.392, 0.392, 0.482))
+      let itemY = yPos - 12
+      itemY -= drawWrappedText(item.name || 'Invoice Item', margin + 8, itemY, fontBold, 9, rgb(0.059, 0.059, 0.141), cols[0].w - 16, 11)
+      drawWrappedText(item.code || '-', margin + 8, itemY + 1, font, 8, rgb(0.392, 0.392, 0.482), cols[0].w - 16, 10)
       drawText(qty, cols[1].x + cols[1].w / 2 - font.widthOfTextAtSize(qty, 10) / 2, yPos - 14, font, 10, rgb(0, 0, 0))
       drawText(priceText, cols[2].x + cols[2].w - 8 - font.widthOfTextAtSize(priceText, 10), yPos - 14, font, 10, rgb(0, 0, 0))
       drawText(totalText, cols[3].x + cols[3].w - 8 - fontBold.widthOfTextAtSize(totalText, 10), yPos - 14, fontBold, 10, rgb(0, 0, 0))
-      yPos -= 24
+      yPos -= rowHeight
     }
 
     const totalX = width - margin - 200
