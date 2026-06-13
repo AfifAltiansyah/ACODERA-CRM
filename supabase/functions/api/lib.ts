@@ -21,11 +21,15 @@ export function getJwtSecret(): string {
 }
 
 export function generateToken(user: { id: number; email: string; role: string; branch?: string | null; branch_id?: string | null }): string {
-  return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, branch: user.branch || null, branch_id: user.branch_id || null },
-    getJwtSecret(),
-    { expiresIn: '24h' }
-  )
+  const payload: Record<string, unknown> = { id: user.id, email: user.email, role: user.role }
+  if (user.branch) payload.branch = user.branch
+  if (user.branch_id) payload.branch_id = user.branch_id
+
+  // Customers get no expiry; CRM users get 24h
+  if (user.role === 'customer') {
+    return jwt.sign(payload, getJwtSecret())
+  }
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: '24h' })
 }
 
 export function verifyToken(token: string): { id: number; email: string; role: string; branch: string | null; branch_id: string | null } {

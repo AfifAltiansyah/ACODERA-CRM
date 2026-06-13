@@ -1284,3 +1284,117 @@ export async function handleGatewayConfig(req: Request, method: string): Promise
     return jsonResponse({ error: 'Failed to process gateway config' }, 500)
   }
 }
+
+// ─── Customer Auth (External Website) ─────────────────────────────
+
+export async function handleCustomerRegister(req: Request): Promise<Response> {
+  try {
+    const body = await parseBody(req)
+    const { email, password, name, phone } = body
+    if (!email || !password) {
+      return jsonResponse({ error: 'Email and password are required' }, 400)
+    }
+    if (typeof password === 'string' && password.length < 6) {
+      return jsonResponse({ error: 'Password must be at least 6 characters' }, 400)
+    }
+
+    const supabase = getSupabase()
+    const { data: existing } = await supabase.from('customer_users').select('id').eq('email', email as string)
+    if (existing && existing.length > 0) {
+      return jsonResponse({ error: 'Email already registered' }, 409)
+    }
+
+    const hashed = bcrypt.hashSync(password as string, 10)
+    const { data: newUser, error } = await supabase
+      .from('customer_users')
+      .insert({
+        email: email as string,
+        password: hashed,
+        name: (name as string) || '',
+        phone: (phone as string) || '',
+      })
+      .select('id, email, name, phone')
+      .single()
+
+    if (error) throw error
+    const token = generateToken({ id: newUser.id, email: newUser.email, role: 'customer' } as any)
+
+    return jsonResponse({ token, user: newUser }, 201)
+  } catch (err) {
+    console.error('Customer register error:', err)
+    return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+}
+
+export async function handleCustomerLogin(req: Request): Promise<Response> {
+  try {
+    const body = await parseBody(req)
+    const { email, password } = body
+    if (!email || !password) {
+      return jsonResponse({ error: 'Email and password are required' }, 400)
+    }
+
+    const supabase = getSupabase()
+    const { data: users, error } = await supabase
+      .from('customer_users')
+      .select('*')
+      .eq('email', email as string)
+
+    if (error) throw error
+    if (!users || users.length === 0) {
+      return jsonResponse({ error: 'Invalid email or password' }, 401)
+    }
+
+    const user = users[0] as any
+    const valid = bcrypt.compareSync(password as string, user.password)
+    if (!valid) {
+      return jsonResponse({ error: 'Invalid email or password' }, 401)
+    }
+
+    const token = generateToken({ id: user.id, email: user.email, role: 'customer' } as any)
+
+    return jsonResponse({
+      token,
+      user: { id: user.id, email: user.email, name: user.name, phone: user.phone },
+    })
+  } catch (err) {
+    console.error('Customer login error:', err)
+    return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+}
+
+export async function handleCustomerMe(req: Request): Promise<Response> {
+  try {
+    const auth = req.headers.get('authorization')
+    if (!auth?.startsWith('Bearer ')) {
+      return jsonResponse({ error: 'Unauthorized' }, 401)
+    }
+
+    let decoded
+    try {
+      decoded = verifyToken(auth.slice(7))
+    } catch {
+      return jsonResponse({ error: 'Invalid or expired token' }, 401)
+    }
+
+    if (decoded.role !== 'customer') {
+      return jsonResponse({ error: 'Not a customer account' }, 403)
+    }
+
+    const supabase = getSupabase()
+    const { data: users } = await supabase
+      .from('customer_users')
+      .select('id, email, name, phone, created_at')
+      .eq('id', decoded.id)
+      .single()
+
+    if (!users) {
+      return jsonResponse({ error: 'User not found' }, 404)
+    }
+
+    return jsonResponse({ user: users })
+  } catch (err) {
+    console.error('Customer me error:', err)
+    return jsonResponse({ error: 'Internal server error' }, 500)
+  }
+}
