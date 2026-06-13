@@ -940,8 +940,12 @@ export async function handleExternal(req: Request, method: string, path: string)
       const email = url.searchParams.get('email')
       const phone = url.searchParams.get('phone')
 
+      const selectClause = entity === 'transactions'
+        ? '*, tickets!left(title, abbreviation, date_time, location, price)'
+        : '*'
+
       let q = supabase.from(entity)
-        .select('*, tickets!left(title, abbreviation, date_time, location, price)')
+        .select(selectClause)
         .order('created_at', { ascending: false })
       if (filter) q = q.eq(filter.column, filter.value)
       if (email) q = q.eq('buyer_email', email)
