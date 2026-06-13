@@ -492,35 +492,42 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     // ── Header: Logo + Company (left) | INVOICE + Details (right) ──
     const logo = await embedLogo()
     let logoEndX = M
-    if (logo) {
-      const dims = logo.scaleToFit(42, 42)
-      page.drawImage(logo, { x: M, y: y - dims.height, width: dims.width, height: dims.height })
-      logoEndX = M + dims.width + 10
-    } else if (tpl.logoInitial) {
-      drawRect(M, y - 34, 34, 34, accent)
-      drawText(tpl.logoInitial, M + 10, y - 20, fontBold, 16, rgb(1, 1, 1))
-      logoEndX = M + 44
-    }
-    drawText(tpl.companyName, logoEndX, y - 14, fontBold, 18, accent)
-    if (tpl.address) drawText(tpl.address, logoEndX, y - 28, font, 9, rgb(0.45, 0.45, 0.5))
-    drawText(`${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`, logoEndX, y - 40, font, 9, rgb(0.45, 0.45, 0.5))
 
-    // Right column: INVOICE title
-    const rcX = width * 0.55
-    drawText('INVOICE', rcX, y - 14, fontBold, 22, accent)
-    drawText(inv.transaction_id || '', rcX, y - 32, font, 11, rgb(0.3, 0.3, 0.38))
-    drawText(dateTime, rcX, y - 46, font, 10, rgb(0.45, 0.45, 0.5))
+    // Draw logo or initial
+    if (logo) {
+      const dims = logo.scaleToFit(48, 48)
+      const logoY = y - 48
+      page.drawImage(logo, { x: M, y: logoY, width: dims.width, height: dims.height })
+      logoEndX = M + dims.width + 12
+    } else if (tpl.logoInitial) {
+      drawRect(M, y - 48, 48, 48, accent)
+      drawText(tpl.logoInitial, M + 15, y - 30, fontBold, 20, rgb(1, 1, 1))
+      logoEndX = M + 60
+    }
+
+    // Company info (left side)
+    drawText(tpl.companyName, logoEndX, y - 16, fontBold, 20, accent)
+    if (tpl.address) {
+      drawText(tpl.address, logoEndX, y - 32, font, 10, rgb(0.45, 0.45, 0.5))
+    }
+    drawText(`${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`, logoEndX, y - 46, font, 10, rgb(0.45, 0.45, 0.5))
+
+    // Right column: INVOICE title and details
+    const rcX = width * 0.58
+    drawText('INVOICE', rcX, y - 16, fontBold, 24, accent)
+    drawText(inv.transaction_id || '', rcX, y - 36, font, 12, rgb(0.3, 0.3, 0.38))
+    drawText(dateTime, rcX, y - 52, font, 10, rgb(0.45, 0.45, 0.5))
 
     // Status badge
-    const badgeW = textW(statusLabel, font, 10) + 16
-    drawRect(rcX, y - 64, badgeW, 18, rgb(0.96, 0.96, 0.97))
-    drawText(statusLabel, rcX + 8, y - 52, font, 10, statusColor)
+    const badgeW = textW(statusLabel, fontBold, 10) + 20
+    drawRect(rcX, y - 72, badgeW, 20, rgb(0.96, 0.96, 0.97))
+    drawText(statusLabel, rcX + 10, y - 58, fontBold, 10, statusColor)
 
-    y -= 80
+    y -= 88
 
     // ── Accent line ──
-    drawLine(M, y, width - M, y, accent, 2)
-    y -= 24
+    drawLine(M, y, width - M, y, accent, 3)
+    y -= 28
 
     // ── Bill To (left) | Payment Details (right) ──
     drawText('BILL TO', M, y, fontBold, 8, rgb(0.6, 0.6, 0.65))
