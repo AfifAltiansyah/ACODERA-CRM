@@ -1073,6 +1073,57 @@ export async function handleExternal(req: Request, method: string, path: string)
       return respond({ success: true })
     }
 
+    // ── PATCH /external/transactions/{id_or_transaction_id} ──────────
+    if (method === 'PATCH' && entity === 'transactions' && id) {
+      const isNumericId = /^\d+$/.test(id)
+      let q = supabase.from('transactions').select('*')
+      if (isNumericId) {
+        q = q.eq('id', Number(id))
+      } else {
+        q = q.eq('transaction_id', id)
+      }
+      const filter = tenantWhere()
+      if (filter) q = q.eq(filter.column, filter.value)
+      const { data: txn, error: findErr } = await q.single()
+
+      if (findErr || !txn) {
+        return respond({ error: 'Transaction not found' }, 404)
+      }
+
+      const existingMeta = (txn.metadata && typeof txn.metadata === 'object') ? { ...txn.metadata } : {}
+      const metaUpdates: Record<string, unknown> = {}
+
+      if (body.proof) {
+        const branchId = user!.branch_id || String(user!.branch || '')
+        const proofUrl = await storeProof(
+          String(body.proof),
+          String(body.proof_name || ''),
+          branchId
+        )
+        if (proofUrl) metaUpdates.proof_url = proofUrl
+        if (body.proof_name) metaUpdates.proof_name = String(body.proof_name)
+      }
+
+      if (body.notes !== undefined) {
+        metaUpdates.notes = String(body.notes)
+      }
+
+      const newMetadata = { ...existingMeta, ...metaUpdates }
+
+      const { error: updateErr } = await supabase
+        .from('transactions')
+        .update({ metadata: newMetadata })
+        .eq('id', txn.id)
+
+      if (updateErr) {
+        console.error('[PATCH] Update failed:', updateErr.message)
+        return respond({ error: 'Failed to update transaction' }, 500)
+      }
+
+      await audit('patch.transaction', String(txn.id))
+      return respond({ success: true })
+    }
+
     if (method === 'DELETE' && id) {
       const filter = tenantWhere()
       let q = supabase.from(entity).delete().eq('id', id)
