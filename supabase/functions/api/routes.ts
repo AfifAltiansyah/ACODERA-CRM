@@ -1,5 +1,6 @@
 import bcryptMod from 'npm:bcryptjs@2.4.3'
 const bcrypt = bcryptMod.default || bcryptMod
+import { crypto } from 'https://deno.land/std@0.224.0/crypto/mod.ts'
 import { getSupabase, jsonResponse, parseBody, getQueryParams, verifyToken, generateToken, generateApiKey, logAudit, getIP, getClientInfo, authenticateApiKey, randomBranchId, generateCode, storeCode, verifyCode, isEmailVerified, sendEmail, verificationEmailHtml, passwordResetHtml } from './lib.ts'
 
 type Handler = (ctx: {
@@ -1401,4 +1402,251 @@ export async function handleCustomerMe(req: Request): Promise<Response> {
     console.error('Customer me error:', err)
     return jsonResponse({ error: 'Internal server error' }, 500)
   }
+}
+
+// ─── Webhook Handler (Midtrans Payment Gateway) ─────────────────────
+
+async function logWebhook(supabase: any, gateway: string, token: string, orderId: string, status: string, payload: unknown, result?: unknown, error?: string) {
+  try {
+    await supabase.from('webhook_logs').insert([{
+      gateway,
+      token: token ? token.slice(0, 8) + '...' : null,
+      order_id: orderId,
+      status,
+      payload: payload as any,
+      result: result as any,
+      error: error || null,
+    }])
+  } catch (e) {
+    console.error('[webhook] Failed to log:', e)
+  }
+}
+
+function verifyMidtransSignature(body: Record<string, unknown>, serverKey: string): boolean {
+  const orderId = String(body.order_id || '')
+  const statusCode = String(body.status_code || '')
+  const grossAmount = String(body.gross_amount || '')
+  const signature = String(body.signature_key || '')
+
+  const input = orderId + statusCode + grossAmount + serverKey
+
+  // Use SubtleCrypto for SHA-512
+  const encoder = new TextEncoder()
+  const data = encoder.encode(input)
+
+  // Manual SHA-512 using bcrypt's hash for comparison
+  // Actually, we need to compute SHA-512. Let's use a different approach.
+  // Deno's crypto.subtle doesn't support SHA-512 easily, so we'll use a simple comparison
+  // by computing the hash ourselves using the data
+
+  // For now, let's use a workaround: compute SHA-512 using Deno's built-in
+  try {
+    const hashBuffer = crypto.subtle.digestSync('SHA-512', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const computed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    return computed === signature
+  } catch {
+    console.error('[webhook] SHA-512 hash failed')
+    return false
+  }
+}
+
+function mapMidtransStatus(gatewayStatus: string): string | null {
+  const s = (gatewayStatus || '').toLowerCase()
+  const paidStatuses = ['settlement', 'capture', 'success', 'completed', 'paid']
+  const cancelledStatuses = ['expire', 'cancel', 'deny', 'failure', 'failed', 'refund', 'chargeback']
+  const fraudStatuses = ['fraud']
+
+  if (paidStatuses.includes(s)) return 'paid'
+  if (cancelledStatuses.includes(s)) return 'cancelled'
+  if (fraudStatuses.includes(s)) return 'cancelled'
+  return null
+}
+
+export async function handleWebhook(req: Request, method: string, path: string): Promise<Response> {
+  const supabase = getSupabase()
+  const respond = (data: unknown, status = 200) => jsonResponse(data, status)
+
+  if (method !== 'POST') {
+    return respond({ error: 'Method not allowed' }, 405)
+  }
+
+  // Parse path: /webhook/:gateway/:token
+  const parts = path.replace(/^\/webhook\//, '').split('/')
+  const gateway = parts[0] || ''
+  const token = parts[1] || ''
+
+  if (!gateway || !token) {
+    return respond({ error: 'Missing gateway or token in URL' }, 400)
+  }
+
+  console.log(`[webhook] Received ${gateway} webhook, token: ${token.slice(0, 8)}...`)
+
+  // Parse body
+  let body: Record<string, unknown> = {}
+  try { body = await req.json() } catch { /* empty */ }
+
+  // Look up user by webhook token
+  const { data: users, error: findError } = await supabase
+    .from('users')
+    .select('id, email, branch_id, payment_gateway, gateway_config')
+    .eq('gateway_webhook_token', token)
+    .eq('payment_gateway', gateway)
+
+  if (findError || !users || users.length === 0) {
+    console.error('[webhook] No matching gateway config found')
+    await logWebhook(supabase, gateway, token, '', 'no_config', body, null, 'No matching gateway configuration')
+    return respond({ error: 'No matching gateway configuration found' }, 404)
+  }
+
+  const user = users[0]
+  const config = typeof user.gateway_config === 'string'
+    ? JSON.parse(user.gateway_config)
+    : (user.gateway_config || {})
+
+  // Verify Midtrans signature
+  const serverKey = config.server_key || ''
+  if (!serverKey) {
+    console.error('[webhook] No server key configured')
+    await logWebhook(supabase, gateway, token, '', 'no_key', body, null, 'No server key configured')
+    return respond({ error: 'Gateway not configured' }, 500)
+  }
+
+  const signatureValid = verifyMidtransSignature(body, serverKey)
+  if (!signatureValid) {
+    console.error('[webhook] Invalid signature')
+    await logWebhook(supabase, gateway, token, String(body.order_id || ''), 'invalid_signature', body, null, 'Invalid signature')
+    return respond({ error: 'Invalid signature' }, 401)
+  }
+
+  console.log('[webhook] Signature verified')
+
+  // Parse webhook payload
+  const orderId = String(body.order_id || '')
+  const transactionStatus = String(body.transaction_status || '')
+  const grossAmount = parseFloat(String(body.gross_amount || '0'))
+  const buyerEmail = String(body.email || '')
+  const fraudStatus = String(body.fraud_status || '')
+
+  if (!orderId) {
+    await logWebhook(supabase, gateway, token, '', 'no_order_id', body, null, 'Missing order_id')
+    return respond({ error: 'Missing order_id' }, 400)
+  }
+
+  console.log(`[webhook] Order: ${orderId}, Status: ${transactionStatus}, Fraud: ${fraudStatus}`)
+
+  // Map status
+  let newStatus = mapMidtransStatus(transactionStatus)
+
+  // Handle fraud status
+  if (fraudStatus === 'fraud' || fraudStatus === 'deny') {
+    newStatus = 'cancelled'
+    console.log(`[webhook] Fraud detected for ${orderId}, marking as cancelled`)
+  }
+
+  if (!newStatus) {
+    await logWebhook(supabase, gateway, token, orderId, 'unknown_status', body, null, `Unknown status: ${transactionStatus}`)
+    return respond({ success: true, processed: false, reason: 'unknown_status' })
+  }
+
+  // Find the transaction
+  const { data: txns, error: txnError } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('transaction_id', orderId)
+    .limit(1)
+
+  if (txnError || !txns || txns.length === 0) {
+    console.error('[webhook] Transaction not found:', orderId)
+    await logWebhook(supabase, gateway, token, orderId, 'not_found', body, null, 'Transaction not found')
+    return respond({ success: true, processed: false, reason: 'not_found' })
+  }
+
+  const txn = txns[0]
+  const oldStatus = txn.status
+
+  if (newStatus === oldStatus) {
+    await logWebhook(supabase, gateway, token, orderId, 'no_change', body, { oldStatus, newStatus })
+    return respond({ success: true, processed: false, reason: 'no_change' })
+  }
+
+  // Update transaction
+  let updateData: Record<string, unknown> = {}
+  if (newStatus === 'paid') {
+    updateData = {
+      status: 'paid',
+      purchased_at: new Date().toISOString(),
+      payment_method: 'midtrans',
+      payment_detail: `Paid via Midtrans (${transactionStatus})`,
+    }
+  } else if (newStatus === 'cancelled') {
+    // Reset to available
+    updateData = {
+      status: 'available',
+      transaction_id: `TKT-AVAIL-${txn.unique_code}`,
+      buyer_name: '',
+      buyer_email: '',
+      buyer_phone: '',
+      payment_method: '',
+      payment_detail: '',
+      purchased_at: null,
+      expires_at: null,
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from('transactions')
+    .update(updateData)
+    .eq('transaction_id', orderId)
+
+  if (updateError) {
+    console.error('[webhook] Update failed:', updateError.message)
+    await logWebhook(supabase, gateway, token, orderId, 'update_failed', body, null, updateError.message)
+    return respond({ error: 'Failed to update transaction' }, 500)
+  }
+
+  console.log(`[webhook] Transaction ${orderId}: ${oldStatus} → ${newStatus}`)
+
+  // Fire invoice.paid automation if status changed to paid
+  if (newStatus === 'paid' && oldStatus !== 'paid') {
+    try {
+      const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET') || ''
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (AUTOMATION_SECRET) headers['apikey'] = AUTOMATION_SECRET
+
+      const automationUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/trigger-automation?event=invoice.paid`
+
+      await fetch(automationUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          contact_email: buyerEmail || txn.buyer_email || '',
+          contact_name: txn.buyer_name || '',
+          data: {
+            invoice_id: orderId,
+            amount: grossAmount || txn.total_amount || 0,
+            buyer_email: buyerEmail || txn.buyer_email || '',
+            buyer_name: txn.buyer_name || '',
+            transaction_id: orderId,
+            status: 'paid',
+            branch: txn.branch || '',
+          },
+        }),
+      })
+
+      console.log(`[webhook] Fired invoice.paid automation for ${orderId}`)
+    } catch (autoErr) {
+      console.error('[webhook] Failed to fire automation:', autoErr)
+    }
+  }
+
+  await logWebhook(supabase, gateway, token, orderId, 'processed', body, { oldStatus, newStatus })
+
+  return respond({
+    success: true,
+    processed: true,
+    orderId,
+    oldStatus,
+    newStatus,
+  })
 }

@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { corsHeaders, jsonResponse, verifyToken, runSql } from './lib.ts'
-import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handlePaymentOptions, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal, handleCustomerRegister, handleCustomerLogin, handleCustomerMe } from './routes.ts'
+import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handlePaymentOptions, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal, handleCustomerRegister, handleCustomerLogin, handleCustomerMe, handleWebhook } from './routes.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -79,6 +79,10 @@ async function route(req: Request, path: string, method: string): Promise<Respon
 
   if (path.startsWith('/customer/me')) {
     return handleCustomerMe(req)
+  }
+
+  if (path.startsWith('/webhook')) {
+    return handleWebhook(req, method, path)
   }
 
   if (path.startsWith('/external')) {
