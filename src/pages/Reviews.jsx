@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Star, Filter, MessageSquare } from 'lucide-react'
 import { getReviews, replyToReview } from '../services/dataService'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 function StarRating({ rating, size = 16 }) {
   return (
@@ -24,6 +25,8 @@ export function ReviewsPage() {
   const refresh = () => getReviews().then(setReviews)
 
   useEffect(() => { refresh().finally(() => setLoading(false)) }, [])
+
+  useRealtimeRefresh('reviews', refresh)
 
   const filtered = reviews
     .filter(r => filterRating === 0 || r.rating === filterRating)

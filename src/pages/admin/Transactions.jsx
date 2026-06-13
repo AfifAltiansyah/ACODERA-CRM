@@ -4,6 +4,7 @@ import { Search, Filter, X, Download, Eye, CheckCircle, Ban, ChevronDown, Chevro
 import { supabase } from '../../lib/supabase'
 import { getUser } from '../../utils/auth'
 import { useCurrencyFormatter } from '../../utils/currencyFormatter'
+import { useRealtimeRefresh } from '../../hooks/useSupabaseRealtime'
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Status' },
@@ -54,6 +55,8 @@ export function TransactionsPage() {
   }
 
   useEffect(() => { fetchData() }, [statusFilter, ticketFilter])
+
+  useRealtimeRefresh('transactions', fetchData)
 
   const updateStatus = async (id, newStatus) => {
     if (newStatus === 'cancelled' && !window.confirm('Cancel this transaction? This cannot be undone.')) return

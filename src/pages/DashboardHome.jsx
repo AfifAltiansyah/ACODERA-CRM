@@ -5,6 +5,7 @@ import { Users, GitBranch, DollarSign, Star, TrendingUp, Plus, Zap, Receipt, Tic
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getContacts, getFlows, getReviews, getInvoices } from '../services/dataService'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
+import { useSupabaseRealtime } from '../hooks/useSupabaseRealtime'
 
 const container = { hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }
 const item = { hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }
@@ -28,6 +29,22 @@ export function DashboardHome() {
       })
       .finally(() => setLoading(false))
   }, [])
+
+  const refreshAll = () => {
+    Promise.all([getContacts(), getFlows(), getReviews(), getInvoices()])
+      .then(([c, f, r, i]) => {
+        setContacts(c)
+        setFlows(f)
+        setReviews(r)
+        setInvoices(i)
+      })
+      .catch(() => {})
+  }
+
+  useSupabaseRealtime('transactions', { event: '*' }, refreshAll)
+  useSupabaseRealtime('contacts', { event: '*' }, refreshAll)
+  useSupabaseRealtime('flows', { event: '*' }, refreshAll)
+  useSupabaseRealtime('reviews', { event: '*' }, refreshAll)
 
   const totalContacts = contacts.length
   const activeFlows = flows.filter(f => f.stage !== 'closed').length

@@ -5,6 +5,7 @@ import { Plus, X, ArrowRight, ArrowLeft, Trash2 } from 'lucide-react'
 import { getFlows, addFlow, moveFlow, deleteFlow } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 const stages = [
   { key: 'new', label: 'New Lead', color: 'bg-blue-500' },
@@ -23,6 +24,8 @@ export function FlowManagementPage() {
   const refresh = () => getFlows().then(setFlows)
 
   useEffect(() => { refresh().finally(() => setLoading(false)) }, [])
+
+  useRealtimeRefresh('flows', refresh)
 
   const handleMove = async (id, direction) => {
     const flow = flows.find(f => f.id === id)

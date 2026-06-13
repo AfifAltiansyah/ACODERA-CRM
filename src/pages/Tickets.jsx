@@ -5,6 +5,7 @@ import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCir
 import { getTickets, addTicket, deleteTicket } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 function extractAbbreviation(title) {
   if (!title) return ''
@@ -38,6 +39,8 @@ export function TicketsPage() {
   useEffect(() => {
     refresh().finally(() => setLoading(false))
   }, [])
+
+  useRealtimeRefresh('transactions', refresh)
 
   const filtered = tickets.filter(t =>
     t.title.toLowerCase().includes(search.toLowerCase()) ||

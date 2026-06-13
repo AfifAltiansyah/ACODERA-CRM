@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, CheckCircle, XCircle, Clock, User, Ticket, Mail, Phone, QrCode } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { getUser } from '../../utils/auth'
+import { useRealtimeRefresh } from '../../hooks/useSupabaseRealtime'
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-500/10', border: 'border-yellow-200 dark:border-yellow-500/20' },
@@ -42,6 +43,8 @@ export function CheckInPage() {
   }
 
   useEffect(() => { fetchLists() }, [])
+
+  useRealtimeRefresh('transactions', fetchLists)
 
   const lookup = async (overrideCode) => {
     const trimmed = (overrideCode || code).trim()

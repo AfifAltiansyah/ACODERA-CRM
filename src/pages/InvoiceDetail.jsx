@@ -5,6 +5,7 @@ import { ArrowLeft, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Clock, Co
 import { getInvoices, getContacts, updateTransactionStatus } from '../services/dataService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
 import { DEFAULT_TEMPLATE, loadTemplate } from './InvoiceTemplate'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 const BANK_OPTIONS = [
   { value: 'bca', label: 'BCA', accountNumber: '81934138145', accountName: 'Acodera CRM' },
@@ -42,6 +43,12 @@ export function InvoiceDetailPage() {
     load()
     loadTemplate().then(setTemplate).catch(() => {})
   }, [id])
+
+  useRealtimeRefresh('transactions', async () => {
+    const invoices = await getInvoices()
+    const found = invoices.find(i => i.id === id)
+    if (found) setInvoice(found)
+  })
 
   useEffect(() => {
     if (!invoice || invoice.status !== 'pending' || !invoice.expiresAt) return

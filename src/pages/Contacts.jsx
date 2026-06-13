@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Trash2 } from 'lucide-react'
 import { getContacts, deleteContact } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 export function ContactsPage() {
   const navigate = useNavigate()
@@ -17,6 +18,8 @@ export function ContactsPage() {
   useEffect(() => {
     refresh().finally(() => setLoading(false))
   }, [])
+
+  useRealtimeRefresh('contacts', refresh)
 
   const filtered = contacts.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||

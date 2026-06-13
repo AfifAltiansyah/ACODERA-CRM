@@ -9,6 +9,7 @@ import { DEFAULT_TEMPLATE, loadTemplate } from './InvoiceTemplate'
 import { generateInvoiceHtml } from '../lib/invoiceHtml'
 import { useCurrencyFormatter, getCurrencySymbol } from '../utils/currencyFormatter'
 import { useCurrency } from '../hooks/useCurrency.jsx'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 function CountdownTimer({ expiresAt }) {
   const [display, setDisplay] = useState(() => {
@@ -204,6 +205,8 @@ export function InvoicingPage() {
   useEffect(() => {
     refresh().finally(() => setLoading(false))
   }, [])
+
+  useRealtimeRefresh('transactions', refresh)
 
   const filtered = invoices.filter(inv =>
     inv.transactionId.toLowerCase().includes(search.toLowerCase()) ||

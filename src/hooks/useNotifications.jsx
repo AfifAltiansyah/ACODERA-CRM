@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { getUser } from '../utils/auth'
+import { useSupabaseRealtime } from './useSupabaseRealtime'
 
 const NotificationContext = createContext()
 
@@ -40,9 +41,12 @@ export function NotificationProvider({ children }) {
 
   useEffect(() => {
     fetchUnreadCount()
-    const interval = setInterval(fetchUnreadCount, 30000)
-    return () => clearInterval(interval)
   }, [fetchUnreadCount])
+
+  // Real-time subscription replaces 30-second polling
+  useSupabaseRealtime('notifications', { event: 'INSERT' }, useCallback(() => {
+    fetchUnreadCount()
+  }, [fetchUnreadCount]))
 
   const markAsRead = useCallback(async (id) => {
     await supabase.from('notifications').update({ read: true }).eq('id', id)

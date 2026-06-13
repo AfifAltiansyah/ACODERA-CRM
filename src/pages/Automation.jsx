@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Zap, Plus, Trash2, Mail, MessageSquare, Target, Megaphone, FileText, ChevronRight } from 'lucide-react'
 import { getAutomations, toggleAutomation, deleteAutomation } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 const typeIcons = { 'Email Drip': Mail, 'SMS Follow-up': MessageSquare, 'Lead Scoring': Target, 'Marketing Campaign': Megaphone, 'Invoice Reminder': FileText }
 const typeColors = {
@@ -25,6 +26,8 @@ export function AutomationPage() {
   useEffect(() => {
     refresh().finally(() => setLoading(false))
   }, [])
+
+  useRealtimeRefresh('automations', refresh)
 
   const handleToggle = async (id) => {
     try {

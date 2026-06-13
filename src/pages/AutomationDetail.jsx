@@ -6,6 +6,7 @@ import { addToTrash } from '../utils/trashService'
 import { generateInvoiceReminderHtml } from '../lib/invoiceHtml'
 import { generateInvoicePdfBase64 } from '../lib/generateInvoicePdf'
 import { loadTemplate } from './InvoiceTemplate'
+import { useRealtimeRefresh } from '../hooks/useSupabaseRealtime'
 
 const typeIcons = { 'Email Drip': Mail, 'SMS Follow-up': Mail, 'Lead Scoring': Zap, 'Marketing Campaign': Mail, 'Invoice Reminder': FileText }
 const typeColors = {
@@ -42,6 +43,12 @@ export function AutomationDetailPage() {
     })
     getContacts().then(setContacts)
   }, [id])
+
+  useRealtimeRefresh('automation_logs', () => {
+    if (logsOpen) {
+      getAutomationLogs(id).then(setLogs).catch(() => {})
+    }
+  }, { event: 'INSERT' })
 
   const handleToggle = async () => {
     if (!automation) return
