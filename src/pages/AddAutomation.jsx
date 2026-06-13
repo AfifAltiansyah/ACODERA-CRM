@@ -41,87 +41,108 @@ function buildInvoicePreviewHtml(tpl) {
   const taxRate = tpl?.taxRate || 0
 
   const logoHtml = logoSrc
-    ? `<img src="${logoSrc}" alt="${company.name}" style="width:auto;height:auto;max-width:120px;max-height:60px;object-fit:contain;" />`
-    : `<div style="width:40px;height:40px;border-radius:8px;background:${accent};display:flex;align-items:center;justify-content:center;"><span style="color:#fff;font-weight:bold;font-size:18px;">${logoInitial}</span></div>`
+    ? `<img src="${logoSrc}" alt="${company.name}" width="120" height="48" style="display:block;border:0;max-width:120px;max-height:48px;" />`
+    : `<span style="display:inline-block;width:28px;height:28px;line-height:28px;border-radius:4px;background:${accent};color:#fff;font-weight:bold;font-size:14px;text-align:center;margin-right:8px;">${logoInitial}</span>`
 
-  return `<div style="padding:40px;font-family:system-ui,-apple-system,sans-serif;background:#fff;color:#0f172a;">
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:24px;border-bottom:2px solid ${accent};">
-  <div>
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-      ${logoHtml}
-      <h1 style="margin:0;font-size:24px;font-weight:700;color:${accent};">${company.name}</h1>
-    </div>
-    <p style="margin:4px 0 0;font-size:13px;color:#64748b;">${company.address}</p>
-    <p style="margin:2px 0 0;font-size:13px;color:#64748b;">${company.email} | ${company.phone}</p>
-  </div>
-  <div style="text-align:right;">
-    <h2 style="margin:0;font-size:28px;font-weight:700;color:${accent};letter-spacing:1px;">INVOICE</h2>
-    <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#334155;">{{transactionId}}</p>
-    <p style="margin:4px 0 0;font-size:13px;color:#64748b;">Date: {{invoiceDate}}</p>
-    <span style="display:inline-block;margin-top:8px;padding:4px 16px;border-radius:9999px;font-size:12px;font-weight:600;">{{invoiceStatus}}</span>
-  </div>
-</div>
+  return `<div style="max-width:600px;margin:0 auto;background:#fff;font-family:Arial,Helvetica,sans-serif;padding:24px 32px;">
 
-<div style="margin-bottom:24px;padding:12px 16px;background:#f0f7ff;border-radius:8px;border:1px solid #b3d9ff;">
-  <p style="margin:0;font-size:13px;color:#0066cc;"><span style="font-weight:600;">Ticket:</span> {{itemName}}</p>
-</div>
-
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:40px;">
-  <div>
-    <p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;">Bill To</p>
-    <p style="margin:0;font-size:16px;font-weight:600;color:#0f172a;">{{name}}</p>
-    <p style="margin:4px 0 0;font-size:14px;color:#64748b;">{{email}}</p>
-    <p style="margin:4px 0 0;font-size:14px;color:#64748b;">{{buyer_phone}}</p>
-  </div>
-  <div style="text-align:right;">
-    <p style="margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#94a3b8;">Payment Details</p>
-    <p style="margin:0;font-size:14px;color:#334155;"><span style="font-weight:500;">Method:</span> {{paymentMethod}}</p>
-    <p style="margin:4px 0 0;font-size:14px;color:#334155;"><span style="font-weight:500;">Info:</span> {{paymentDetail}}</p>
-  </div>
-</div>
-
-<table style="width:100%;border-collapse:collapse;margin-bottom:32px;">
-  <thead>
-    <tr style="background:#f1f5f9;">
-      <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#64748b;border-bottom:2px solid #e2e8f0;">Item</th>
-      <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#64748b;border-bottom:2px solid #e2e8f0;">Qty</th>
-      <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#64748b;border-bottom:2px solid #e2e8f0;">Price/Unit</th>
-      <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#64748b;border-bottom:2px solid #e2e8f0;">Total</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="padding:16px;font-size:14px;border-bottom:1px solid #e2e8f0;">
-        <div style="font-weight:500;margin-bottom:2px;">{{itemName}}</div>
-        <div style="font-family:monospace;font-size:12px;color:#64748b;">{{itemCode}}</div>
-      </td>
-      <td style="padding:16px;font-size:14px;text-align:center;border-bottom:1px solid #e2e8f0;">{{quantity}}</td>
-      <td style="padding:16px;font-size:14px;text-align:right;border-bottom:1px solid #e2e8f0;">${currency}{{pricePerUnit}}</td>
-      <td style="padding:16px;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #e2e8f0;">${currency}{{totalAmount}}</td>
-    </tr>
-  </tbody>
+<table role="presentation" style="width:100%;border-collapse:collapse;border-bottom:2px solid ${accent};margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="width:55%;vertical-align:top;padding-bottom:12px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          ${logoSrc ? `<td style="vertical-align:middle;padding-right:8px;">${logoHtml}</td>` : ''}
+          <td style="vertical-align:middle;">
+            ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:28px;height:28px;line-height:28px;border-radius:4px;background:${accent};color:#fff;font-weight:bold;font-size:14px;text-align:center;margin-right:8px;">${logoInitial}</span>` : ''}
+            <span style="font-size:16px;font-weight:700;color:${accent};">${company.name}</span>
+          </td>
+        </tr>
+      </table>
+      ${company.address ? `<p style="margin:4px 0 0;font-size:11px;color:#64748b;">${company.address}</p>` : ''}
+      <p style="margin:2px 0 0;font-size:11px;color:#64748b;">${company.email}${company.phone ? ' | ' + company.phone : ''}</p>
+    </td>
+    <td style="width:45%;vertical-align:top;text-align:right;padding-bottom:12px;">
+      <p style="margin:0;font-size:16px;font-weight:700;color:${accent};">INVOICE</p>
+      <p style="margin:4px 0 0;font-size:12px;font-weight:600;color:#334155;">{{transactionId}}</p>
+      <p style="margin:4px 0 0;font-size:11px;color:#64748b;">Date: {{invoiceDate}}</p>
+      <span style="display:inline-block;margin-top:6px;padding:2px 12px;border-radius:10px;font-size:11px;font-weight:600;color:#ca8a04;background:#ca8a0415;border:1px solid #ca8a0430;">{{invoiceStatus}}</span>
+    </td>
+  </tr>
 </table>
 
-<div style="display:flex;justify-content:flex-end;margin-bottom:40px;">
-  <div style="width:280px;">
-    <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:14px;color:#64748b;">
-      <span>Subtotal</span>
-      <span>${currency}{{totalAmount}}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;padding:12px 0;font-size:14px;color:#64748b;">
-      <span>Tax (${taxRate}%)</span>
-      <span>${currency}{{taxAmount}}</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:8px;border-top:2px solid ${accent};font-size:18px;font-weight:700;color:${accent};">
-      <span>Total Due</span>
-      <span>${currency}{{totalWithTax}}</span>
-    </div>
-  </div>
-</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:16px;" cellpadding="0" cellspacing="0" border="0">
+  <tr><td style="padding:8px 12px;background:#f0f7ff;border-radius:6px;"><p style="margin:0;font-size:11px;color:#0066cc;"><strong>Ticket:</strong> {{itemName}}</p></td></tr>
+</table>
 
-<div style="text-align:center;padding-top:24px;border-top:1px solid #e2e8f0;">
-  <p style="margin:0;font-size:12px;color:#94a3b8;">${company.footer} | ${company.name} | ${company.website}</p>
-</div>
+<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="width:50%;vertical-align:top;">
+      <p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Bill To</p>
+      <p style="margin:0;font-size:14px;font-weight:600;color:#0f172a;">{{name}}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#64748b;">{{email}}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#64748b;">{{buyer_phone}}</p>
+    </td>
+    <td style="width:50%;vertical-align:top;text-align:right;">
+      <p style="margin:0 0 6px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#94a3b8;">Payment Details</p>
+      <p style="margin:0;font-size:13px;color:#334155;"><strong>Method:</strong> {{paymentMethod}}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#334155;"><strong>Info:</strong> {{paymentDetail}}</p>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;table-layout:fixed;" cellpadding="0" cellspacing="0" border="0">
+  <colgroup>
+    <col style="width:52%;" />
+    <col style="width:10%;" />
+    <col style="width:19%;" />
+    <col style="width:19%;" />
+  </colgroup>
+  <tr style="background:#f1f5f9;">
+    <th style="padding:8px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Item</th>
+    <th style="padding:8px 12px;text-align:center;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Qty</th>
+    <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Price/Unit</th>
+    <th style="padding:8px 12px;text-align:right;font-size:10px;font-weight:600;text-transform:uppercase;color:#64748b;border-bottom:1px solid #e2e8f0;">Total</th>
+  </tr>
+  <tr>
+    <td style="padding:12px;font-size:13px;border-bottom:1px solid #f1f5f9;word-break:break-word;overflow-wrap:anywhere;">
+      <div style="font-weight:600;margin-bottom:1px;">{{itemName}}</div>
+      <span style="font-size:11px;color:#64748b;font-family:monospace;">{{itemCode}}</span>
+    </td>
+    <td style="padding:12px;font-size:13px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;">{{quantity}}</td>
+    <td style="padding:12px;font-size:13px;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">${currency}{{pricePerUnit}}</td>
+    <td style="padding:12px;font-size:13px;font-weight:600;text-align:right;border-bottom:1px solid #f1f5f9;white-space:nowrap;">${currency}{{totalAmount}}</td>
+  </tr>
+</table>
+
+<table role="presentation" style="width:100%;border-collapse:collapse;margin-bottom:24px;" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="width:60%;"></td>
+    <td style="width:40%;">
+      <table role="presentation" style="width:100%;border-collapse:collapse;" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Subtotal</td>
+          <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">${currency}{{totalAmount}}</td>
+        </tr>
+        ${taxRate > 0 ? `<tr>
+          <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:left;">Tax (${taxRate}%)</td>
+          <td style="padding:4px 0;font-size:12px;color:#64748b;text-align:right;">${currency}{{taxAmount}}</td>
+        </tr>` : ''}
+        <tr>
+          <td style="padding:8px 0 0;font-size:14px;font-weight:700;color:${accent};text-align:left;border-top:2px solid ${accent};">Total Due</td>
+          <td style="padding:8px 0 0;font-size:14px;font-weight:700;color:${accent};text-align:right;border-top:2px solid ${accent};">${currency}{{totalWithTax}}</td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+
+<table role="presentation" style="width:100%;border-collapse:collapse;border-top:1px solid #e2e8f0;" cellpadding="0" cellspacing="0" border="0">
+  <tr>
+    <td style="padding-top:12px;text-align:center;">
+      <p style="margin:0;font-size:10px;color:#94a3b8;">${company.footer} | ${company.name}${company.website ? ' | ' + company.website : ''}</p>
+    </td>
+  </tr>
+</table>
 </div>`
 }
 

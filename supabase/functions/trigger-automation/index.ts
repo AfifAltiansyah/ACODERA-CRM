@@ -283,14 +283,14 @@ serve(async (req) => {
           continue
         }
 
-        // Global dedup: skip recipients already emailed in last 24h
-        if (recipients.length > 0) {
-          const { data: existing } = await supabase
-            .from('automation_logs')
-            .select('contact_email')
-            .in('contact_email', recipients)
-            .eq('status', 'sent')
-            .gte('created_at', new Date(Date.now() - 86400000).toISOString())
+          // Global dedup: skip recipients already emailed in last 24h
+          if (recipients.length > 0) {
+            const { data: existing } = await supabase
+              .from('automation_logs')
+              .select('contact_email')
+              .in('contact_email', recipients)
+              .eq('status', 'sent')
+              .gte('created_at', new Date(Date.now() - 86400000).toISOString())
 
           if (existing && existing.length > 0) {
             const sentEmails = new Set(existing.map((e: any) => e.contact_email))

@@ -256,7 +256,7 @@ serve(async (req) => {
               .select('id')
               .eq('contact_email', inv.buyer_email)
               .eq('status', 'sent')
-              .gte('sent_at', new Date(Date.now() - 86400000).toISOString())
+              .gte('created_at', new Date(Date.now() - 86400000).toISOString())
               .limit(1)
             if (recentlySent && recentlySent.length > 0) {
               console.log('[process-automations] Overdue dedup skip:', inv.buyer_email)
@@ -324,10 +324,12 @@ serve(async (req) => {
       .lte('next_run_at', now)
 
     if (invoiceAutos && invoiceAutos.length > 0) {
+      const oneHourAgo = new Date(Date.now() - 3600000).toISOString()
       const { data: recentInvoices } = await supabase
         .from('transactions')
         .select('*')
         .in('status', ['paid', 'pending'])
+        .gte('created_at', oneHourAgo)
         .order('created_at', { ascending: false })
         .limit(50)
 
@@ -358,7 +360,7 @@ serve(async (req) => {
               .select('id')
               .eq('contact_email', inv.buyer_email)
               .eq('status', 'sent')
-              .gte('sent_at', new Date(Date.now() - 86400000).toISOString())
+              .gte('created_at', new Date(Date.now() - 86400000).toISOString())
               .limit(1)
             if (recentlySent && recentlySent.length > 0) {
               console.log('[process-automations] Dedup skip:', inv.buyer_email, '- already received invoice email in last 24h')

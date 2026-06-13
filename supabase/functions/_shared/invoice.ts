@@ -532,10 +532,10 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
 
     const tableWidth = width - margin * 2
     const cols = [
-      { header: 'Item', x: margin, w: 240 },
-      { header: 'Qty', x: margin + 240, w: 48 },
-      { header: 'Price/Unit', x: margin + 288, w: 92 },
-      { header: 'Total', x: margin + 380, w: tableWidth - 380 },
+      { header: 'Item', x: margin, w: Math.floor(tableWidth * 0.45) },
+      { header: 'Qty', x: margin + Math.floor(tableWidth * 0.45), w: Math.floor(tableWidth * 0.12) },
+      { header: 'Price/Unit', x: margin + Math.floor(tableWidth * 0.57), w: Math.floor(tableWidth * 0.21) },
+      { header: 'Total', x: margin + Math.floor(tableWidth * 0.78), w: Math.floor(tableWidth * 0.22) },
     ]
     drawRect(margin, yPos - 22, tableWidth, 22, rgb(0.945, 0.961, 0.976))
     for (const col of cols) {
@@ -547,22 +547,33 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const totalText = `${cur}${Number(summaryItem.total || 0).toLocaleString()}`
     const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 9, cols[0].w - 16)
     const codeLines = wrapText(summaryItem.code || '-', font, 8, cols[0].w - 16)
-    const rowHeight = Math.max(34, 12 + (nameLines.length * 11) + (codeLines.length * 10))
+    const contentHeight = (nameLines.length * 11) + (codeLines.length * 10) + 16
+    const rowHeight = Math.max(34, contentHeight)
 
     drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
-    let itemY = yPos - 12
-    itemY -= drawWrappedText(summaryItem.name || 'Invoice Item', margin + 8, itemY, fontBold, 9, rgb(0.059, 0.059, 0.141), cols[0].w - 16, 11)
-    drawWrappedText(summaryItem.code || '-', margin + 8, itemY + 1, font, 8, rgb(0.392, 0.392, 0.482), cols[0].w - 16, 10)
-    drawFittedCenteredText(qty, cols[1].x + cols[1].w / 2, yPos - 14, font, 10, rgb(0, 0, 0), cols[1].w - 8)
-    drawFittedRightText(priceText, cols[2].x + cols[2].w - 8, yPos - 14, font, 10, rgb(0, 0, 0), cols[2].w - 16)
-    drawFittedRightText(totalText, cols[3].x + cols[3].w - 8, yPos - 14, fontBold, 10, rgb(0, 0, 0), cols[3].w - 16)
+    const nameStartY = yPos - 10
+    let nameEndY = nameStartY
+    for (let i = 0; i < nameLines.length; i++) {
+      drawText(nameLines[i], margin + 8, nameStartY - i * 11, fontBold, 9, rgb(0.059, 0.059, 0.141))
+      nameEndY = nameStartY - i * 11
+    }
+    const codeStartY = nameEndY - 12
+    for (let i = 0; i < codeLines.length; i++) {
+      drawText(codeLines[i], margin + 8, codeStartY - i * 10, font, 8, rgb(0.392, 0.392, 0.482))
+    }
+    const cellMidY = yPos - 10 - (rowHeight - 20) / 2
+    drawFittedCenteredText(qty, cols[1].x + cols[1].w / 2, cellMidY, font, 10, rgb(0, 0, 0), cols[1].w - 8)
+    drawFittedRightText(priceText, cols[2].x + cols[2].w - 8, cellMidY, font, 10, rgb(0, 0, 0), cols[2].w - 16)
+    drawFittedRightText(totalText, cols[3].x + cols[3].w - 8, cellMidY, fontBold, 10, rgb(0, 0, 0), cols[3].w - 16)
     yPos -= rowHeight
 
     const totalX = width - margin - 200
     drawFittedRightText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, width - margin, yPos, font, 11, rgb(0.392, 0.392, 0.482), width - margin - totalX)
     yPos -= 18
-    drawFittedRightText(`Tax (${taxRate}%): ${cur}${taxAmount.toLocaleString()}`, width - margin, yPos, font, 11, rgb(0.392, 0.392, 0.482), width - margin - totalX)
-    yPos -= 24
+    if (taxRate > 0) {
+      drawFittedRightText(`Tax (${taxRate}%): ${cur}${taxAmount.toLocaleString()}`, width - margin, yPos, font, 11, rgb(0.392, 0.392, 0.482), width - margin - totalX)
+      yPos -= 24
+    }
     drawLine(totalX, yPos, width - margin, yPos, accent, 2)
     yPos -= 20
     drawFittedRightText(`Total Due: ${cur}${totalWithTax.toLocaleString()}`, width - margin, yPos, fontBold, 16, accent, width - margin - totalX)
