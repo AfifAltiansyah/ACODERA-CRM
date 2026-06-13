@@ -161,21 +161,21 @@ export function generateInvoiceHtml(
           <td style="width:55%;vertical-align:top;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                ${logoSrc ? `<td style="vertical-align:middle;padding-right:10px;"><img src="${logoSrc}" alt="Logo" width="48" height="48" style="display:block;border:0;" /></td>` : ''}
+                ${logoSrc ? `<td style="vertical-align:middle;padding-right:12px;"><img src="${logoSrc}" alt="${companyName}" style="display:block;border:0;max-width:80px;max-height:60px;width:auto;height:auto;" /></td>` : ''}
                 <td style="vertical-align:middle;">
-                  ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:32px;height:32px;line-height:32px;background:${accent};color:#fff;font-weight:bold;font-size:16px;text-align:center;margin-right:8px;">${logoInitial}</span>` : ''}
-                  <span style="font-size:18px;font-weight:700;color:${accent};">${companyName}</span>
+                  ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:40px;height:40px;line-height:40px;background:${accent};color:#fff;font-weight:bold;font-size:18px;text-align:center;margin-right:10px;">${logoInitial}</span>` : ''}
+                  <span style="font-size:20px;font-weight:700;color:${accent};">${companyName}</span>
                 </td>
               </tr>
             </table>
-            ${address ? `<p style="margin:6px 0 0;font-size:12px;color:#6b7280;">${address}</p>` : ''}
+            ${address ? `<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">${address}</p>` : ''}
             <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">${email}${phone ? ' | ' + phone : ''}</p>
           </td>
           <td style="width:45%;vertical-align:top;text-align:right;">
-            <p style="margin:0;font-size:22px;font-weight:700;color:${accent};letter-spacing:1px;">INVOICE</p>
-            <p style="margin:6px 0 0;font-size:13px;font-weight:600;color:#374151;">${txn.transaction_id || ''}</p>
+            <p style="margin:0;font-size:24px;font-weight:700;color:${accent};letter-spacing:1px;">INVOICE</p>
+            <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#374151;">${txn.transaction_id || ''}</p>
             <p style="margin:4px 0 0;font-size:12px;color:#6b7280;">${txn.purchased_at ? new Date(txn.purchased_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            <span style="display:inline-block;margin-top:8px;padding:3px 14px;font-size:11px;font-weight:600;color:${statusColor};background:${statusColor}12;border:1px solid ${statusColor}40;">${statusLabel}</span>
+            <span style="display:inline-block;margin-top:8px;padding:4px 16px;font-size:12px;font-weight:600;color:${statusColor};background:${statusColor}12;border:1px solid ${statusColor}40;">${statusLabel}</span>
           </td>
         </tr>
       </table>
@@ -309,19 +309,19 @@ export function generateInvoiceReminderHtml(
           <td style="width:55%;vertical-align:top;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                ${logoSrc ? `<td style="vertical-align:middle;padding-right:10px;"><img src="${logoSrc}" alt="Logo" width="48" height="48" style="display:block;border:0;" /></td>` : ''}
+                ${logoSrc ? `<td style="vertical-align:middle;padding-right:12px;"><img src="${logoSrc}" alt="${companyName}" style="display:block;border:0;max-width:80px;max-height:60px;width:auto;height:auto;" /></td>` : ''}
                 <td style="vertical-align:middle;">
-                  ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:32px;height:32px;line-height:32px;background:${accent};color:#fff;font-weight:bold;font-size:16px;text-align:center;margin-right:8px;">${logoInitial}</span>` : ''}
-                  <span style="font-size:18px;font-weight:700;color:${accent};">${companyName}</span>
+                  ${!logoSrc && logoInitial ? `<span style="display:inline-block;width:40px;height:40px;line-height:40px;background:${accent};color:#fff;font-weight:bold;font-size:18px;text-align:center;margin-right:10px;">${logoInitial}</span>` : ''}
+                  <span style="font-size:20px;font-weight:700;color:${accent};">${companyName}</span>
                 </td>
               </tr>
             </table>
-            ${address ? `<p style="margin:6px 0 0;font-size:12px;color:#6b7280;">${address}</p>` : ''}
+            ${address ? `<p style="margin:8px 0 0;font-size:12px;color:#6b7280;">${address}</p>` : ''}
             <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">${email}${phone ? ' | ' + phone : ''}</p>
           </td>
           <td style="width:45%;vertical-align:top;text-align:right;">
-            <p style="margin:0;font-size:20px;font-weight:700;color:${accent};letter-spacing:1px;">PAYMENT REMINDER</p>
-            <p style="margin:6px 0 0;font-size:13px;font-weight:600;color:#374151;">${txn.transaction_id || ''}</p>
+            <p style="margin:0;font-size:22px;font-weight:700;color:${accent};letter-spacing:1px;">PAYMENT REMINDER</p>
+            <p style="margin:8px 0 0;font-size:14px;font-weight:600;color:#374151;">${txn.transaction_id || ''}</p>
           </td>
         </tr>
       </table>
@@ -503,73 +503,73 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const logo = await embedLogo()
     let nameX = margin
     if (logo) {
-      const logoDims = logo.scaleToFit(32, 32)
+      const logoDims = logo.scaleToFit(45, 45)
       page.drawImage(logo, { x: margin, y: yPos - logoDims.height, width: logoDims.width, height: logoDims.height })
-      nameX = margin + logoDims.width + 8
+      nameX = margin + logoDims.width + 10
     } else if (tpl.logoInitial) {
-      drawRect(margin, yPos - 28, 28, 28, accent)
-      drawText(tpl.logoInitial, margin + 7, yPos - 10, fontBold, 14, rgb(1, 1, 1))
-      nameX = margin + 36
+      drawRect(margin, yPos - 36, 36, 36, accent)
+      drawText(tpl.logoInitial, margin + 10, yPos - 16, fontBold, 18, rgb(1, 1, 1))
+      nameX = margin + 46
     }
-    drawText(tpl.companyName, nameX, yPos - 12, fontBold, 16, accent)
+    drawText(tpl.companyName, nameX, yPos - 16, fontBold, 18, accent)
 
     const invText = 'INVOICE'
-    drawText(invText, rightColX, yPos - 12, fontBold, 18, accent)
-    yPos -= 22
+    drawText(invText, rightColX, yPos - 16, fontBold, 22, accent)
+    yPos -= 30
 
     if (tpl.address) {
-      drawWrappedText(tpl.address, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482), rightColX - margin - 12, 11)
+      drawWrappedText(tpl.address, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482), rightColX - margin - 12, 12)
     }
     const tidText = inv.transaction_id || ''
-    drawFittedRightText(tidText, width - margin, yPos - 2, font, 11, rgb(0.392, 0.392, 0.482), width - margin - rightColX)
-    yPos -= 14
+    drawFittedRightText(tidText, width - margin, yPos - 2, font, 12, rgb(0.392, 0.392, 0.482), width - margin - rightColX)
+    yPos -= 16
 
     const contactLine = `${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`
-    drawWrappedText(contactLine, margin, yPos, font, 9, rgb(0.392, 0.392, 0.482), rightColX - margin - 12, 11)
+    drawWrappedText(contactLine, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482), rightColX - margin - 12, 12)
     const dateText = `Date: ${dateTime}`
-    drawFittedRightText(dateText, width - margin, yPos - 2, font, 9, rgb(0.392, 0.392, 0.482), width - margin - rightColX)
-    yPos -= 14
+    drawFittedRightText(dateText, width - margin, yPos - 2, font, 10, rgb(0.392, 0.392, 0.482), width - margin - rightColX)
+    yPos -= 16
 
     const statusLabel = inv.status === 'paid' ? 'Paid' : inv.status === 'cancelled' ? 'Cancelled' : 'Pending'
     const statusColor = inv.status === 'paid' ? rgb(0.086, 0.639, 0.29) : inv.status === 'cancelled' ? rgb(0.863, 0.149, 0.149) : rgb(0.796, 0.541, 0.016)
-    const statusW = font.widthOfTextAtSize(statusLabel, 9) + 16
-    drawRect(rightColX, yPos - 3, statusW, 16, rgb(0.96, 0.96, 0.98))
-    drawText(statusLabel, rightColX + 8, yPos + 8, font, 9, statusColor)
-    yPos -= 6
+    const statusW = font.widthOfTextAtSize(statusLabel, 10) + 20
+    drawRect(rightColX, yPos - 5, statusW, 20, rgb(0.96, 0.96, 0.98))
+    drawText(statusLabel, rightColX + 10, yPos + 10, font, 10, statusColor)
+    yPos -= 10
 
     drawLine(margin, yPos, width - margin, yPos, accent, 2)
-    yPos -= 20
+    yPos -= 24
 
-    drawText('Bill To', margin, yPos, fontBold, 8, rgb(0.58, 0.58, 0.62))
-    yPos -= 14
-    drawText(customerName, margin, yPos, fontBold, 13, rgb(0.059, 0.059, 0.141))
+    drawText('Bill To', margin, yPos, fontBold, 9, rgb(0.58, 0.58, 0.62))
     yPos -= 16
-    if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
-    if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 10, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
+    drawText(customerName, margin, yPos, fontBold, 14, rgb(0.059, 0.059, 0.141))
+    yPos -= 18
+    if (inv.buyer_email) { drawText(inv.buyer_email, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
+    if (inv.buyer_phone) { drawText(inv.buyer_phone, margin, yPos, font, 11, rgb(0.392, 0.392, 0.482)); yPos -= 14 }
 
     const saveBillToY = yPos
 
     const paymentDetail = getPaymentDetail(inv.payment_method || '', inv.payment_detail || '', tpl.companyName, branchId)
     if (paymentDetail) {
       const payX = rightColX
-      drawText('Payment Details', payX, saveBillToY, fontBold, 8, rgb(0.58, 0.58, 0.62))
-      drawWrappedText(`Method: ${paymentDetail.label}`, payX, saveBillToY - 16, font, 10, rgb(0.2, 0.2, 0.28), width - margin - payX, 12)
-      drawWrappedText(`Info: ${paymentDetail.detail}`, payX, saveBillToY - 30, font, 10, rgb(0.2, 0.2, 0.28), width - margin - payX, 12)
+      drawText('Payment Details', payX, saveBillToY, fontBold, 9, rgb(0.58, 0.58, 0.62))
+      drawWrappedText(`Method: ${paymentDetail.label}`, payX, saveBillToY - 18, font, 11, rgb(0.2, 0.2, 0.28), width - margin - payX, 13)
+      drawWrappedText(`Info: ${paymentDetail.detail}`, payX, saveBillToY - 34, font, 11, rgb(0.2, 0.2, 0.28), width - margin - payX, 13)
     }
-    yPos -= 30
+    yPos -= 36
 
     if (inv.item_name || inv.ticket_title) {
       const ticketName = inv.item_name || inv.ticket_title
-      const ticketLines = wrapText(`Ticket: ${ticketName}`, font, 10, width - margin * 2 - 24)
-      const ticketHeight = Math.max(28, 12 + ticketLines.length * 12)
+      const ticketLines = wrapText(`Ticket: ${ticketName}`, font, 11, width - margin * 2 - 24)
+      const ticketHeight = Math.max(32, 14 + ticketLines.length * 13)
       drawRect(margin, yPos - ticketHeight + 4, width - margin * 2, ticketHeight, rgb(0.941, 0.969, 1))
       page.drawRectangle({
         x: margin, y: yPos - ticketHeight + 4,
         width: width - margin * 2, height: ticketHeight,
         borderColor: rgb(0.702, 0.851, 1), borderWidth: 1,
       })
-      drawWrappedText(`Ticket: ${ticketName}`, margin + 12, yPos - 6, font, 10, rgb(0, 0.4, 0.8), width - margin * 2 - 24, 12)
-      yPos -= ticketHeight + 8
+      drawWrappedText(`Ticket: ${ticketName}`, margin + 12, yPos - 8, font, 11, rgb(0, 0.4, 0.8), width - margin * 2 - 24, 13)
+      yPos -= ticketHeight + 12
     }
 
     const summaryItem = invoiceSummaryItem(inv)
@@ -581,51 +581,51 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
       { header: 'Price/Unit', x: margin + Math.floor(tableWidth * 0.57), w: Math.floor(tableWidth * 0.21) },
       { header: 'Total', x: margin + Math.floor(tableWidth * 0.78), w: Math.floor(tableWidth * 0.22) },
     ]
-    drawRect(margin, yPos - 22, tableWidth, 22, rgb(0.945, 0.961, 0.976))
+    drawRect(margin, yPos - 24, tableWidth, 24, rgb(0.945, 0.961, 0.976))
     for (const col of cols) {
-      drawText(col.header, col.x + 8, yPos - 6, fontBold, 8, rgb(0.392, 0.392, 0.482))
+      drawText(col.header, col.x + 8, yPos - 8, fontBold, 9, rgb(0.392, 0.392, 0.482))
     }
-    yPos -= 28
+    yPos -= 30
     const qty = String(summaryItem.quantity || 1)
     const priceText = `${cur}${Number(summaryItem.price || 0).toLocaleString()}`
     const totalText = `${cur}${Number(summaryItem.total || 0).toLocaleString()}`
-    const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 9, cols[0].w - 16)
-    const codeLines = wrapText(summaryItem.code || '-', font, 8, cols[0].w - 16)
-    const contentHeight = (nameLines.length * 11) + (codeLines.length * 10) + 16
-    const rowHeight = Math.max(34, contentHeight)
+    const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 10, cols[0].w - 16)
+    const codeLines = wrapText(summaryItem.code || '-', font, 9, cols[0].w - 16)
+    const contentHeight = (nameLines.length * 12) + (codeLines.length * 11) + 18
+    const rowHeight = Math.max(40, contentHeight)
 
     drawLine(margin, yPos, width - margin, yPos, rgb(0.886, 0.91, 0.941), 1)
-    const nameStartY = yPos - 10
+    const nameStartY = yPos - 12
     let nameEndY = nameStartY
     for (let i = 0; i < nameLines.length; i++) {
-      drawText(nameLines[i], margin + 8, nameStartY - i * 11, fontBold, 9, rgb(0.059, 0.059, 0.141))
-      nameEndY = nameStartY - i * 11
+      drawText(nameLines[i], margin + 8, nameStartY - i * 12, fontBold, 10, rgb(0.059, 0.059, 0.141))
+      nameEndY = nameStartY - i * 12
     }
-    const codeStartY = nameEndY - 12
+    const codeStartY = nameEndY - 14
     for (let i = 0; i < codeLines.length; i++) {
-      drawText(codeLines[i], margin + 8, codeStartY - i * 10, font, 8, rgb(0.392, 0.392, 0.482))
+      drawText(codeLines[i], margin + 8, codeStartY - i * 11, font, 9, rgb(0.392, 0.392, 0.482))
     }
-    const cellMidY = yPos - 10 - (rowHeight - 20) / 2
-    drawFittedCenteredText(qty, cols[1].x + cols[1].w / 2, cellMidY, font, 10, rgb(0, 0, 0), cols[1].w - 8)
-    drawFittedRightText(priceText, cols[2].x + cols[2].w - 8, cellMidY, font, 10, rgb(0, 0, 0), cols[2].w - 16)
-    drawFittedRightText(totalText, cols[3].x + cols[3].w - 8, cellMidY, fontBold, 10, rgb(0, 0, 0), cols[3].w - 16)
+    const cellMidY = yPos - 12 - (rowHeight - 24) / 2
+    drawFittedCenteredText(qty, cols[1].x + cols[1].w / 2, cellMidY, font, 11, rgb(0, 0, 0), cols[1].w - 8)
+    drawFittedRightText(priceText, cols[2].x + cols[2].w - 8, cellMidY, font, 11, rgb(0, 0, 0), cols[2].w - 16)
+    drawFittedRightText(totalText, cols[3].x + cols[3].w - 8, cellMidY, fontBold, 11, rgb(0, 0, 0), cols[3].w - 16)
     yPos -= rowHeight
 
     const totalX = width - margin - 200
-    drawFittedRightText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, width - margin, yPos, font, 11, rgb(0.392, 0.392, 0.482), width - margin - totalX)
-    yPos -= 18
+    drawFittedRightText(`Subtotal: ${cur}${Number(inv.total_amount || 0).toLocaleString()}`, width - margin, yPos, font, 12, rgb(0.392, 0.392, 0.482), width - margin - totalX)
+    yPos -= 20
     if (taxRate > 0) {
-      drawFittedRightText(`Tax (${taxRate}%): ${cur}${taxAmount.toLocaleString()}`, width - margin, yPos, font, 11, rgb(0.392, 0.392, 0.482), width - margin - totalX)
+      drawFittedRightText(`Tax (${taxRate}%): ${cur}${taxAmount.toLocaleString()}`, width - margin, yPos, font, 12, rgb(0.392, 0.392, 0.482), width - margin - totalX)
       yPos -= 24
     }
     drawLine(totalX, yPos, width - margin, yPos, accent, 2)
-    yPos -= 20
-    drawFittedRightText(`Total Due: ${cur}${totalWithTax.toLocaleString()}`, width - margin, yPos, fontBold, 16, accent, width - margin - totalX)
+    yPos -= 24
+    drawFittedRightText(`Total Due: ${cur}${totalWithTax.toLocaleString()}`, width - margin, yPos, fontBold, 18, accent, width - margin - totalX)
 
     yPos = 40
     drawLine(margin, yPos + 20, width - margin, yPos + 20, rgb(0.886, 0.91, 0.941), 1)
     const footerLine = `${tpl.footerText} | ${tpl.companyName} | ${tpl.website}`
-    drawFittedCenteredText(footerLine, width / 2, yPos + 6, font, 9, rgb(0.58, 0.58, 0.62), width - margin * 2)
+    drawFittedCenteredText(footerLine, width / 2, yPos + 6, font, 10, rgb(0.58, 0.58, 0.62), width - margin * 2)
 
     console.log('[PDF] Saving document...')
     const pdfBytes = await pdfDoc.save()
