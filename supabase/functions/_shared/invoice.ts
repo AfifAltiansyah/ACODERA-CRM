@@ -493,37 +493,37 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const logo = await embedLogo()
     let logoEndX = M
 
-    // Draw logo or initial
+    // Logo - draw at top
     if (logo) {
-      const dims = logo.scaleToFit(48, 48)
-      const logoY = y - 48
-      page.drawImage(logo, { x: M, y: logoY, width: dims.width, height: dims.height })
+      const dims = logo.scaleToFit(50, 50)
+      page.drawImage(logo, { x: M, y: y - dims.height, width: dims.width, height: dims.height })
       logoEndX = M + dims.width + 12
     } else if (tpl.logoInitial) {
-      drawRect(M, y - 48, 48, 48, accent)
-      drawText(tpl.logoInitial, M + 15, y - 30, fontBold, 20, rgb(1, 1, 1))
-      logoEndX = M + 60
+      drawRect(M, y - 50, 50, 50, accent)
+      drawText(tpl.logoInitial, M + 16, y - 32, fontBold, 22, rgb(1, 1, 1))
+      logoEndX = M + 62
     }
 
-    // Company info (left side)
-    drawText(tpl.companyName, logoEndX, y - 16, fontBold, 20, accent)
+    // Company info - aligned with logo
+    drawText(tpl.companyName, logoEndX, y - 18, fontBold, 20, accent)
     if (tpl.address) {
-      drawText(tpl.address, logoEndX, y - 32, font, 10, rgb(0.45, 0.45, 0.5))
+      drawText(tpl.address, logoEndX, y - 34, font, 10, rgb(0.45, 0.45, 0.5))
     }
-    drawText(`${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`, logoEndX, y - 46, font, 10, rgb(0.45, 0.45, 0.5))
+    drawText(`${tpl.email}${tpl.phone ? ' | ' + tpl.phone : ''}`, logoEndX, y - 48, font, 10, rgb(0.45, 0.45, 0.5))
 
     // Right column: INVOICE title and details
     const rcX = width * 0.58
-    drawText('INVOICE', rcX, y - 16, fontBold, 24, accent)
-    drawText(inv.transaction_id || '', rcX, y - 36, font, 12, rgb(0.3, 0.3, 0.38))
-    drawText(dateTime, rcX, y - 52, font, 10, rgb(0.45, 0.45, 0.5))
+    drawText('INVOICE', rcX, y - 18, fontBold, 26, accent)
+    drawText(inv.transaction_id || '', rcX, y - 38, font, 12, rgb(0.3, 0.3, 0.38))
+    drawText(dateTime, rcX, y - 54, font, 10, rgb(0.45, 0.45, 0.5))
 
-    // Status badge
+    // Status badge - properly aligned
     const badgeW = textW(statusLabel, fontBold, 10) + 20
-    drawRect(rcX, y - 72, badgeW, 20, rgb(0.96, 0.96, 0.97))
-    drawText(statusLabel, rcX + 10, y - 58, fontBold, 10, statusColor)
+    const badgeY = y - 74
+    drawRect(rcX, badgeY, badgeW, 20, rgb(0.96, 0.96, 0.97))
+    drawText(statusLabel, rcX + 10, badgeY + 6, fontBold, 10, statusColor)
 
-    y -= 88
+    y -= 90
 
     // ── Accent line ──
     drawLine(M, y, width - M, y, accent, 3)
