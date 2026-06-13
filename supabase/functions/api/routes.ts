@@ -1096,11 +1096,13 @@ export async function handleExternal(req: Request, method: string, path: string)
       }
       const filter = tenantWhere()
       if (filter) q = q.eq(filter.column, filter.value)
-      const { data: txn, error: findErr } = await q.single()
+      const { data: txns, error: findErr } = await q.limit(1)
 
-      if (findErr || !txn) {
+      if (findErr || !txns || txns.length === 0) {
         return respond({ error: 'Transaction not found' }, 404)
       }
+
+      const txn = txns[0]
 
       const existingMeta = (txn.metadata && typeof txn.metadata === 'object') ? { ...txn.metadata } : {}
       const metaUpdates: Record<string, unknown> = {}
