@@ -10,6 +10,7 @@ import { storeSession } from './utils/auth'
 import { DashboardHome } from './pages/DashboardHome'
 import { AddContactPage } from './pages/AddContact'
 import { AddAutomationPage } from './pages/AddAutomation'
+import { EditAutomationPage } from './pages/EditAutomation'
 import { AddFlowPage } from './pages/AddFlow'
 import { AddInvoicePage } from './pages/AddInvoice'
 import { AddTicketPage } from './pages/AddTicket'
@@ -106,6 +107,7 @@ export default function App() {
               <Route path="contacts/new" element={<AddContactPage />} />
               <Route path="automation" element={<AutomationPage />} />
               <Route path="automation/new" element={<AddAutomationPage />} />
+              <Route path="automation/:id/edit" element={<EditAutomationPage />} />
               <Route path="automation/:id" element={<AutomationDetailPage />} />
               <Route path="flow" element={<FlowManagementPage />} />
               <Route path="flow/new" element={<AddFlowPage />} />

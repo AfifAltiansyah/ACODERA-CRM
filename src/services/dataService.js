@@ -223,6 +223,31 @@ export async function addAutomation(automation) {
   return formatAutomation(data)
 }
 
+export async function updateAutomation(id, automation) {
+  const isImmediate = automation.scheduleType === 'immediate'
+  const scheduledAtUtc = isImmediate ? null : toUtcIso(automation.scheduledAt)
+  const { data, error } = await supabase
+    .from('automations')
+    .update({
+      name: automation.name,
+      type: automation.type,
+      trigger_event: automation.trigger || '',
+      schedule_type: automation.scheduleType || 'once',
+      schedule_frequency: automation.scheduleFrequency || 'monthly',
+      scheduled_at: scheduledAtUtc,
+      next_run_at: scheduledAtUtc,
+      subject: automation.subject || '',
+      body: automation.body || '',
+      from_name: automation.fromName || 'Acodera CRM',
+    })
+    .eq('id', Number(id))
+    .select()
+    .single()
+
+  if (error) throw error
+  return formatAutomation(data)
+}
+
 export async function deleteAutomation(id) {
   const { data, error } = await filterBranch(
     supabase.from('automations').delete().eq('id', Number(id))
