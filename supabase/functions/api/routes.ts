@@ -800,7 +800,7 @@ async function storeProof(base64Data: string, filename: string, branchId: string
     const path = `proofs/${branchId}/${Date.now()}_${fileName}`
     const supabase = getSupabase()
     const { error } = await supabase.storage
-      .from('transactions')
+      .from('proofs')
       .upload(path, bytes, { contentType: mimeType, upsert: true })
 
     if (error) {
@@ -808,7 +808,7 @@ async function storeProof(base64Data: string, filename: string, branchId: string
       return null
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('transactions').getPublicUrl(path)
+    const { data: { publicUrl } } = supabase.storage.from('proofs').getPublicUrl(path)
     return publicUrl
   } catch (err) {
     console.error('[proof] Error:', err instanceof Error ? err.message : String(err))
@@ -1093,6 +1093,12 @@ export async function handleExternal(req: Request, method: string, path: string)
       const existingMeta = (txn.metadata && typeof txn.metadata === 'object') ? { ...txn.metadata } : {}
       const metaUpdates: Record<string, unknown> = {}
 
+      // Format 1: { metadata: { proof_url, proof_name, notes } } from external site
+      if (body.metadata && typeof body.metadata === 'object') {
+        Object.assign(metaUpdates, body.metadata)
+      }
+
+      // Format 2: { proof: "base64...", proof_name: "..." } (direct base64 upload)
       if (body.proof) {
         const branchId = user!.branch_id || String(user!.branch || '')
         const proofUrl = await storeProof(
@@ -1104,6 +1110,7 @@ export async function handleExternal(req: Request, method: string, path: string)
         if (body.proof_name) metaUpdates.proof_name = String(body.proof_name)
       }
 
+      // Format 3: { notes: "..." } (top-level)
       if (body.notes !== undefined) {
         metaUpdates.notes = String(body.notes)
       }
