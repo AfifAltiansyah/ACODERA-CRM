@@ -1096,15 +1096,15 @@ export async function handleExternal(req: Request, method: string, path: string)
       }
       const filter = tenantWhere()
       if (filter) q = q.eq(filter.column, filter.value)
-      const { data: txns, error: findErr } = await q.limit(1)
+      const { data: txns, error: findErr } = await q
 
       if (findErr || !txns || txns.length === 0) {
         return respond({ error: 'Transaction not found' }, 404)
       }
 
-      const txn = txns[0]
-
-      const existingMeta = (txn.metadata && typeof txn.metadata === 'object') ? { ...txn.metadata } : {}
+      // Use the first row's metadata as base, merge updates
+      const firstTxn = txns[0]
+      const existingMeta = (firstTxn.metadata && typeof firstTxn.metadata === 'object') ? { ...firstTxn.metadata } : {}
       const metaUpdates: Record<string, unknown> = {}
 
       // Format 1: { metadata: { proof_url, proof_name, notes } } from external site
@@ -1131,18 +1131,20 @@ export async function handleExternal(req: Request, method: string, path: string)
 
       const newMetadata = { ...existingMeta, ...metaUpdates }
 
+      // Update ALL matching rows (e.g. quantity=2 creates 2 rows with same transaction_id)
+      const allIds = txns.map((t: any) => t.id)
       const { error: updateErr } = await supabase
         .from('transactions')
         .update({ metadata: newMetadata })
-        .eq('id', txn.id)
+        .in('id', allIds)
 
       if (updateErr) {
         console.error('[PATCH] Update failed:', updateErr.message)
         return respond({ error: 'Failed to update transaction' }, 500)
       }
 
-      await audit('patch.transaction', String(txn.id))
-      return respond({ success: true })
+      await audit('patch.transaction', String(firstTxn.id))
+      return respond({ success: true, updated: allIds.length })
     }
 
     if (method === 'DELETE' && id) {
