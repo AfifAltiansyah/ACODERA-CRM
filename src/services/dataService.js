@@ -487,21 +487,19 @@ export async function getTickets() {
 
   if (txns) {
     for (const t of txns) {
-      if (!statsMap[t.ticket_id]) statsMap[t.ticket_id] = { sold: 0, available: 0 }
-      if (t.status === 'available') {
-        statsMap[t.ticket_id].available++
-      } else {
+      if (!statsMap[t.ticket_id]) statsMap[t.ticket_id] = { sold: 0 }
+      if (t.status !== 'available' && t.status !== 'cancelled') {
         statsMap[t.ticket_id].sold++
       }
     }
   }
 
   return data.map(t => {
-    const stats = statsMap[t.id] || { sold: 0, available: 0 }
+    const stats = statsMap[t.id] || { sold: 0 }
     return {
       ...formatTicket(t),
       soldCount: stats.sold,
-      availableCount: stats.available,
+      availableCount: Math.max(0, Number(t.quantity) - stats.sold),
     }
   })
 }
@@ -758,13 +756,12 @@ export async function getAvailableTickets() {
   if (!data || data.length === 0) return []
 
   const ids = data.map(t => t.id)
-  const availMap = {}
+  const statsMap = {}
 
   const { data: txns, error: txError } = await supabase
     .from('transactions')
-    .select('ticket_id')
+    .select('ticket_id, status')
     .in('ticket_id', ids)
-    .eq('status', 'available')
 
   if (txError) {
     console.error('getAvailableTickets txns error:', txError)
@@ -772,13 +769,17 @@ export async function getAvailableTickets() {
 
   if (txns) {
     for (const t of txns) {
-      availMap[t.ticket_id] = (availMap[t.ticket_id] || 0) + 1
+      if (!statsMap[t.ticket_id]) statsMap[t.ticket_id] = { sold: 0 }
+      if (t.status !== 'available' && t.status !== 'cancelled') {
+        statsMap[t.ticket_id].sold++
+      }
     }
   }
 
   return data
     .map(t => {
-      const availableCount = availMap[t.id] || 0
+      const stats = statsMap[t.id] || { sold: 0 }
+      const availableCount = Math.max(0, Number(t.quantity) - stats.sold)
       const dt = t.date_time ? new Date(t.date_time) : null
       const dateStr = dt ? dt.toISOString().slice(0, 10).replace(/-/g, '') : '00000000'
       return {
