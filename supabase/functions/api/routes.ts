@@ -936,8 +936,16 @@ export async function handleExternal(req: Request, method: string, path: string)
         return respond({ data: enriched })
       }
 
-      let q = supabase.from(entity).select('*').order('created_at', { ascending: false })
+      const url = new URL(req.url)
+      const email = url.searchParams.get('email')
+      const phone = url.searchParams.get('phone')
+
+      let q = supabase.from(entity)
+        .select('*, tickets!left(title, abbreviation, date_time, location, price)')
+        .order('created_at', { ascending: false })
       if (filter) q = q.eq(filter.column, filter.value)
+      if (email) q = q.eq('buyer_email', email)
+      if (phone) q = q.eq('buyer_phone', phone)
       const { data } = await q
       await audit(`${method.toLowerCase()}.list`)
       return respond({ data })
