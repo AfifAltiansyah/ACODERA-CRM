@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Trash2, RefreshCw, X, AlertTriangle } from 'lucide-react'
-import { getTrashedItems, removeFromTrash, restoreContact, restoreAutomation, restoreFlow, restoreInvoice, restoreTicket } from '../utils/trashService'
+import { getTrashedItems, removeFromTrash, clearAllTrash, restoreContact, restoreAutomation, restoreFlow, restoreInvoice, restoreTicket } from '../utils/trashService'
 import { addContact, addAutomation, addFlow, addInvoice, addTicket } from '../services/dataService'
 
 const ENTITY_LABELS = {
@@ -81,6 +81,18 @@ const handleRestore = async (entity, record) => {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Trash</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{trash.length} deleted items · Review and restore</p>
         </div>
+        {trash.length > 0 && (
+          <button
+            onClick={() => {
+              if (!window.confirm('Permanently delete ALL items in trash? This cannot be undone.')) return
+              clearAllTrash()
+              setTrash([])
+            }}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors border border-red-200 dark:border-red-500/20 shrink-0"
+          >
+            <Trash2 size={14} /> Delete All
+          </button>
+        )}
       </div>
 
       {trash.length > 0 && (
