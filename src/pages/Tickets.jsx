@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Circle, Image as ImageIcon } from 'lucide-react'
+import { Search, Plus, Trash2, X, Ticket, MapPin, Calendar, DollarSign, CheckCircle, Circle, Image as ImageIcon, Pencil } from 'lucide-react'
 import { getTickets, addTicket, deleteTicket } from '../services/dataService'
 import { addToTrash } from '../utils/trashService'
 import { useCurrencyFormatter } from '../utils/currencyFormatter'
@@ -156,6 +156,7 @@ export function TicketsPage() {
                         <p className="text-xs text-slate-400 dark:text-slate-500">{total} tickets</p>
                       </div>
                     </div>
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/tickets/${t.id}/edit`) }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors"><Pencil size={16} /></button>
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(t.id) }} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
                   </div>
                   <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{t.title}</h3>

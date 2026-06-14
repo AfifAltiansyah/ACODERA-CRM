@@ -14,6 +14,7 @@ import { EditAutomationPage } from './pages/EditAutomation'
 import { AddFlowPage } from './pages/AddFlow'
 import { AddInvoicePage } from './pages/AddInvoice'
 import { AddTicketPage } from './pages/AddTicket'
+import { EditTicketPage } from './pages/EditTicket'
 import { ContactsPage } from './pages/Contacts'
 import { AutomationPage } from './pages/Automation'
 import { AutomationDetailPage } from './pages/AutomationDetail'
@@ -117,6 +118,7 @@ export default function App() {
               <Route path="invoicing/:id" element={<InvoiceDetailPage />} />
               <Route path="tickets" element={<TicketsPage />} />
               <Route path="tickets/new" element={<AddTicketPage />} />
+              <Route path="tickets/:id/edit" element={<EditTicketPage />} />
               <Route path="tickets/:id" element={<TicketDetailPage />} />
               <Route path="trash" element={<TrashPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />

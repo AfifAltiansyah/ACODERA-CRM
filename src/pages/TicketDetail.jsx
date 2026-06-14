@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Ticket, MapPin, Calendar, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban, Upload } from 'lucide-react'
+import { ArrowLeft, Ticket, MapPin, Calendar, CheckCircle, Clock, Copy, Check, ExternalLink, Users, Ban, Upload, Pencil } from 'lucide-react'
 import { getTicketInstances } from '../services/dataService'
 import { uploadImage } from '../utils/templateApi'
 import { supabase } from '../lib/supabase'
@@ -103,10 +103,16 @@ export function TicketDetailPage() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate('/dashboard/tickets')} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-        <ArrowLeft size={16} />
-        Back to Tickets
-      </button>
+      <div className="flex items-center justify-between">
+        <button onClick={() => navigate('/dashboard/tickets')} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+          <ArrowLeft size={16} />
+          Back to Tickets
+        </button>
+        <button onClick={() => navigate(`/dashboard/tickets/${id}/edit`)} className="flex items-center gap-2 text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors">
+          <Pencil size={16} />
+          Edit
+        </button>
+      </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <div className="w-full h-48 sm:h-56 overflow-hidden bg-slate-100 dark:bg-slate-700 relative group">

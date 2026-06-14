@@ -553,6 +553,67 @@ export async function addTicket(ticket) {
   return formatTicket(data)
 }
 
+export async function updateTicket(id, ticket) {
+  const { data, error } = await supabase
+    .from('tickets')
+    .update({
+      abbreviation: ticket.abbreviation,
+      title: ticket.title,
+      description: ticket.description || '',
+      price: Number(ticket.price),
+      quantity: Number(ticket.quantity) || 1,
+      location: ticket.location || '',
+      maps_link: ticket.mapsLink || null,
+      date_time: ticket.dateTime || null,
+      image_url: ticket.imageUrl || null,
+    })
+    .eq('id', Number(id))
+    .select()
+    .single()
+
+  if (error) throw error
+
+  const branchId = currentBranchId()
+  const branchTag = branchId ? `${branchId.slice(-6)}` : '000000'
+
+  // Count existing available instances
+  const { data: existingAvail } = await supabase
+    .from('transactions')
+    .select('id')
+    .eq('ticket_id', Number(id))
+    .eq('status', 'available')
+
+  const existingCount = existingAvail?.length || 0
+  const newQuantity = Number(ticket.quantity) || 1
+
+  // If quantity increased, create new available instances
+  if (newQuantity > existingCount) {
+    const rows = []
+    for (let i = existingCount + 1; i <= newQuantity; i++) {
+      const serial = String(i).padStart(5, '0')
+      const uniqueCode = `${data.abbreviation}${data.date_time ? data.date_time.slice(0, 10).replace(/-/g, '') : '00000000'}${branchTag}${serial}`
+      const barcode = Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('')
+      rows.push({
+        ticket_id: Number(id),
+        transaction_id: `TKT-AVAIL-${uniqueCode}`,
+        unique_code: uniqueCode,
+        barcode,
+        quantity: 1,
+        price_per_unit: Number(data.price),
+        total_amount: Number(data.price),
+        status: 'available',
+        branch: branchId || undefined,
+      })
+    }
+    if (rows.length > 0) {
+      const { error: instError } = await supabase.from('transactions').insert(rows)
+      if (instError) throw instError
+    }
+  }
+
+  return formatTicket(data)
+}
+
 export async function deleteTicket(id) {
   const { data, error } = await filterBranch(
     supabase.from('tickets').delete().eq('id', Number(id))
