@@ -453,6 +453,7 @@ function formatTicket(t) {
     soldCount: t.sold_count || 0,
     location: t.location || '',
     imageUrl: t.image_url || '',
+    mapsLink: t.maps_link || '',
     dateTime: dt ? dt.toLocaleString('en-US', {
       year: 'numeric', month: 'short', day: '2-digit',
       hour: '2-digit', minute: '2-digit', hour12: false,
@@ -514,6 +515,7 @@ export async function addTicket(ticket) {
       price: Number(ticket.price),
       quantity: Number(ticket.quantity) || 1,
       location: ticket.location || '',
+      maps_link: ticket.mapsLink || null,
       date_time: ticket.dateTime || null,
       image_url: ticket.imageUrl || null,
     })])

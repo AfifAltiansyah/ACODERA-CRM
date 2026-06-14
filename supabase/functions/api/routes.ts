@@ -942,7 +942,7 @@ export async function handleExternal(req: Request, method: string, path: string)
       const phone = url.searchParams.get('phone')
 
       const selectClause = entity === 'transactions'
-        ? '*, tickets!left(title, abbreviation, date_time, location, price)'
+        ? '*, tickets!left(title, abbreviation, date_time, location, price, maps_link)'
         : '*'
 
       let q = supabase.from(entity)

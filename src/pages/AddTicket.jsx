@@ -27,6 +27,7 @@ export function AddTicketPage() {
     price: 0,
     quantity: 1,
     location: '',
+    mapsLink: '',
     dateTime: '',
   })
 
@@ -161,6 +162,12 @@ export function AddTicketPage() {
           <label htmlFor="ticketLocation" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Location</label>
           <input id="ticketLocation" name="ticketLocation" type="text" value={form.location} onChange={(e) => setForm(p => ({ ...p, location: e.target.value }))}
             placeholder="e.g. Jakarta Convention Center" className="apple-input" />
+        </div>
+
+        <div>
+          <label htmlFor="ticketMapsLink" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Google Maps Link</label>
+          <input id="ticketMapsLink" name="ticketMapsLink" type="url" value={form.mapsLink} onChange={(e) => setForm(p => ({ ...p, mapsLink: e.target.value }))}
+            placeholder="https://maps.google.com/..." className="apple-input" />
         </div>
 
         {form.quantity > 0 && form.title && form.dateTime && (

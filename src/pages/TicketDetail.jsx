@@ -159,6 +159,12 @@ export function TicketDetailPage() {
               <span>{ticket.location}</span>
             </div>
           )}
+          {ticket.mapsLink && (
+            <a href={ticket.mapsLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400 hover:underline">
+              <ExternalLink size={14} />
+              <span>Google Maps</span>
+            </a>
+          )}
           {ticket.dateTime && (
             <div className="flex items-center gap-1.5">
               <Calendar size={14} />
