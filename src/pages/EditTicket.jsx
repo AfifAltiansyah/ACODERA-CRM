@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { X, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react'
@@ -20,6 +20,12 @@ export function EditTicketPage() {
   const { formatCurrency: fc } = useCurrencyFormatter()
 
   const ticketData = JSON.parse(sessionStorage.getItem('selectedTicket') || 'null')
+
+  useEffect(() => {
+    if (!ticketData) {
+      navigate('/dashboard/tickets', { replace: true })
+    }
+  }, [])
 
   const dtForInput = ticketData?.dateTime
     ? (() => {

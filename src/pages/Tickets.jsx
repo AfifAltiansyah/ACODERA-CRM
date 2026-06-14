@@ -57,6 +57,11 @@ export function TicketsPage() {
     navigate(`/dashboard/tickets/${ticket.id}`)
   }
 
+  const editTicket = (ticket) => {
+    sessionStorage.setItem('selectedTicket', JSON.stringify(ticket))
+    navigate(`/dashboard/tickets/${ticket.id}/edit`)
+  }
+
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this ticket? This will move it to Trash.')) return
     try {
@@ -156,7 +161,7 @@ export function TicketsPage() {
                         <p className="text-xs text-slate-400 dark:text-slate-500">{total} tickets</p>
                       </div>
                     </div>
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/dashboard/tickets/${t.id}/edit`) }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors"><Pencil size={16} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); editTicket(t) }} className="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-500/10 dark:hover:text-brand-400 transition-colors"><Pencil size={16} /></button>
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(t.id) }} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
                   </div>
                   <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{t.title}</h3>
