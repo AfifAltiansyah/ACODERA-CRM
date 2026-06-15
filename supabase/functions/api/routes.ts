@@ -835,7 +835,7 @@ export async function handleExternal(req: Request, method: string, path: string)
   const clientInfo = getClientInfo(req)
 
   function tenantWhere() {
-    if (user!.role === 'owner') return null
+    if (user!.role === 'owner' || !user!.branch_id) return null
     if (entity === 'payment_options') return { column: 'branch_id', value: user!.branch_id }
     return { column: 'branch', value: user!.branch_id }
   }
@@ -1005,7 +1005,7 @@ export async function handleExternal(req: Request, method: string, path: string)
 
       if (entity === 'transactions') {
         const branchId = user!.branch_id || String(user!.branch || '')
-        insertData.branch = branchId
+        if (branchId) insertData.branch = branchId
 
         const proofMeta: Record<string, unknown> = {}
         if (insertData.proof) {
