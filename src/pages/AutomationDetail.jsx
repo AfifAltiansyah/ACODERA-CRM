@@ -105,7 +105,7 @@ export function AutomationDetailPage() {
       await sendAutomationEmail({
         to: testEmail,
         fromName: automation.fromName || 'Acodera CRM',
-        subject: `[TEST] ${automation.subject}`,
+        subject: automation.subject,
         body: automation.body || '',
         automationId: automation.id,
       })
