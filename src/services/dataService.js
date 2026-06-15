@@ -1185,7 +1185,7 @@ export async function sendAutomationEmail({ to, fromName, subject, body, automat
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        apikey: AUTOMATION_SECRET,
+        'x-automation-secret': AUTOMATION_SECRET,
       },
       body: JSON.stringify(payload),
     }
@@ -1301,7 +1301,7 @@ export async function triggerAutomationEvent(event, data = {}) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          apikey: AUTOMATION_SECRET,
+          'x-automation-secret': AUTOMATION_SECRET,
         },
         body: JSON.stringify(data),
       }

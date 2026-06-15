@@ -24,7 +24,7 @@ function buildCorsHeaders(req: Request): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-automation-secret',
     'Access-Control-Max-Age': '86400',
   }
 }
@@ -52,7 +52,9 @@ serve(async (req) => {
       return corsResponse({ success: false, error: 'AUTOMATION_SECRET not configured' }, 500)
     }
 
-    const apiKeyHeader = req.headers.get('apikey')
+    // 'apikey' is a reserved header the Supabase gateway strips, so the secret is
+    // carried in 'x-automation-secret' (apikey kept only as a legacy fallback).
+    const apiKeyHeader = req.headers.get('x-automation-secret') || req.headers.get('apikey')
     const authHeader = req.headers.get('authorization')
 
     if (apiKeyHeader === AUTOMATION_SECRET) {
