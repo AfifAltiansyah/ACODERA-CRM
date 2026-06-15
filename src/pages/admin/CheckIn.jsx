@@ -95,20 +95,26 @@ export function CheckInPage() {
     inputRef.current?.focus()
   }
 
-  const checkIn = async () => {
-    if (!result || result.status !== 'paid') return
+  // Change a transaction's check-in status. 'checked_in' stamps who/when;
+  // reverting to 'paid' clears those fields (admin override / undo).
+  const setCheckinStatus = async (newStatus) => {
+    if (!result || result.error) return
     setCheckingIn(true)
     try {
       const user = getUser()
       const branchId = user?.branch_id || ''
 
+      const update = newStatus === 'checked_in'
+        ? {
+            status: 'checked_in',
+            checked_in_at: new Date().toISOString(),
+            checked_in_by: user?.name || user?.id?.toString() || 'Admin',
+          }
+        : { status: newStatus, checked_in_at: null, checked_in_by: null }
+
       const { data: updated, error } = await supabase
         .from('transactions')
-        .update({
-          status: 'checked_in',
-          checked_in_at: new Date().toISOString(),
-          checked_in_by: user?.name || user?.id?.toString() || 'Admin',
-        })
+        .update(update)
         .eq('id', result.id)
         .eq('branch', branchId)
         .select()
@@ -118,15 +124,37 @@ export function CheckInPage() {
 
       setResult(prev => ({
         ...prev,
-        status: 'checked_in',
+        status: updated.status,
         checkedInAt: updated.checked_in_at,
         checkedInBy: updated.checked_in_by,
       }))
       fetchLists()
     } catch (err) {
-      alert('Check-in failed: ' + (err.message || 'Unknown error'))
+      alert('Failed to update status: ' + (err.message || 'Unknown error'))
     }
     setCheckingIn(false)
+  }
+
+  const checkIn = () => setCheckinStatus('checked_in')
+  const undoCheckIn = () => setCheckinStatus('paid')
+
+  // Undo a check-in directly from the list (no lookup needed).
+  const revertRow = async (id) => {
+    if (!window.confirm('Undo this check-in? It will be set back to Paid.')) return
+    try {
+      const user = getUser()
+      const branchId = user?.branch_id || ''
+      const { error } = await supabase
+        .from('transactions')
+        .update({ status: 'paid', checked_in_at: null, checked_in_by: null })
+        .eq('id', id)
+        .eq('branch', branchId)
+      if (error) throw error
+      setResult(prev => prev?.id === id ? { ...prev, status: 'paid', checkedInAt: null, checkedInBy: null } : prev)
+      fetchLists()
+    } catch (err) {
+      alert('Failed to undo check-in: ' + (err.message || 'Unknown error'))
+    }
   }
 
   const handleKeyDown = (e) => {
@@ -273,9 +301,19 @@ export function CheckInPage() {
                   )}
 
                   {result.status === 'checked_in' && (
-                    <p className="mt-3 text-[12px] text-green-600 dark:text-green-400 text-center">
-                      Checked in by {result.checkedInBy || 'staff'}
-                    </p>
+                    <>
+                      <p className="mt-3 text-[12px] text-green-600 dark:text-green-400 text-center">
+                        Checked in by {result.checkedInBy || 'staff'}
+                      </p>
+                      <button
+                        onClick={undoCheckIn}
+                        disabled={checkingIn}
+                        className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-[10px] text-[13px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 bg-white dark:bg-transparent hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50 active:scale-[0.98]"
+                      >
+                        <XCircle size={15} />
+                        {checkingIn ? 'Updating...' : 'Undo Check-in'}
+                      </button>
+                    </>
                   )}
                 </div>
               )}
@@ -327,11 +365,20 @@ export function CheckInPage() {
                     <span>Qty: {t.quantity}</span>
                   </div>
                 </div>
-                <div className="text-right shrink-0 ml-3">
-                  <p className="text-[11px] text-green-600 dark:text-green-400">
-                    {t.checked_in_at ? new Date(t.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
-                  </p>
-                  {t.checked_in_by && <p className="text-[10px] text-[var(--muted)]">by {t.checked_in_by}</p>}
+                <div className="flex items-center gap-3 shrink-0 ml-3">
+                  <div className="text-right">
+                    <p className="text-[11px] text-green-600 dark:text-green-400">
+                      {t.checked_in_at ? new Date(t.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </p>
+                    {t.checked_in_by && <p className="text-[10px] text-[var(--muted)]">by {t.checked_in_by}</p>}
+                  </div>
+                  <button
+                    onClick={() => revertRow(t.id)}
+                    title="Undo check-in"
+                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-[8px] text-[11px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors active:scale-[0.97]"
+                  >
+                    <XCircle size={12} /> Undo
+                  </button>
                 </div>
               </div>
             ))}
