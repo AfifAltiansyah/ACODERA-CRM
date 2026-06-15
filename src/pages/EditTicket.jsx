@@ -50,14 +50,32 @@ export function EditTicketPage() {
     location: ticketData?.location || '',
     mapsLink: ticketData?.mapsLink || '',
     dateTime: dtForInput,
+    abbreviation: ticketData?.abbreviation || extractAbbreviation(ticketData?.title || ''),
   })
+  // Existing tickets already have an abbreviation, so don't auto-overwrite from title edits.
+  const [abbrEdited, setAbbrEdited] = useState(true)
 
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [imageUrl, setImageUrl] = useState(ticketData?.imageUrl || '')
   const fileInputRef = useRef(null)
 
-  const abbreviation = extractAbbreviation(form.title)
+  const abbreviation = form.abbreviation
+
+  const handleTitleChange = (e) => {
+    const title = e.target.value
+    setForm(p => ({
+      ...p,
+      title,
+      abbreviation: abbrEdited ? p.abbreviation : extractAbbreviation(title),
+    }))
+  }
+
+  const handleAbbreviationChange = (e) => {
+    setAbbrEdited(true)
+    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
+    setForm(p => ({ ...p, abbreviation: value }))
+  }
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0]
@@ -114,14 +132,16 @@ export function EditTicketPage() {
       <div className="apple-card space-y-5">
         <div>
           <label htmlFor="ticketTitle" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Title *</label>
-          <input id="ticketTitle" name="ticketTitle" type="text" value={form.title} onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
+          <input id="ticketTitle" name="ticketTitle" type="text" value={form.title} onChange={handleTitleChange}
             placeholder="e.g. Tech Conference 2024" className="apple-input" />
         </div>
 
         {form.title && (
           <div className="rounded-[12px] bg-[var(--accent)]/5 border border-[var(--accent)]/20 p-3.5">
-            <p className="text-[11px] font-medium text-[var(--accent)] mb-1">Abbreviation</p>
-            <p className="font-mono text-[20px] font-bold text-[var(--accent)] tracking-[0.1em]">{abbreviation}</p>
+            <label htmlFor="ticketAbbreviation" className="block text-[11px] font-medium text-[var(--accent)] mb-1.5">Abbreviation</label>
+            <input id="ticketAbbreviation" name="ticketAbbreviation" type="text" value={abbreviation} onChange={handleAbbreviationChange}
+              placeholder="e.g. TECH" maxLength={8}
+              className="apple-input font-mono text-[20px] font-bold text-[var(--accent)] tracking-[0.1em] uppercase" />
           </div>
         )}
 
@@ -194,9 +214,9 @@ export function EditTicketPage() {
 
         {form.quantity > 0 && form.title && form.dateTime && (
           <div className="rounded-[12px] bg-[var(--parchment)] p-3.5">
-            <p className="text-[11px] text-[var(--muted)] mb-1">Unique codes will be generated for new tickets</p>
+            <p className="text-[11px] text-[var(--muted)] mb-1">Unique 6-digit alphanumeric codes will be generated for new tickets</p>
             <p className="font-mono text-[11px] text-[var(--ink)] opacity-60">
-              {abbreviation}{form.dateTime.slice(0, 10).replace(/-/g, '')}... (existing instances preserved)
+              e.g. A7F3K9, 2QX8MZ, ... (existing instances preserved)
             </p>
           </div>
         )}

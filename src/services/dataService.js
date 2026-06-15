@@ -505,6 +505,16 @@ export async function getTickets() {
   })
 }
 
+const CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+function generateUniqueCode(existing = new Set()) {
+  let code
+  do {
+    code = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('')
+  } while (existing.has(code))
+  existing.add(code)
+  return code
+}
+
 export async function addTicket(ticket) {
   const { data, error } = await supabase
     .from('tickets')
@@ -526,11 +536,10 @@ export async function addTicket(ticket) {
 
   const ticketId = data.id
   const branchId = currentBranchId()
-  const branchTag = branchId ? `${branchId.slice(-6)}` : '000000'
+  const usedCodes = new Set()
   const rows = []
   for (let i = 1; i <= data.quantity; i++) {
-    const serial = String(i).padStart(5, '0')
-    const uniqueCode = `${data.abbreviation}${data.date_time ? data.date_time.slice(0, 10).replace(/-/g, '') : '00000000'}${branchTag}${serial}`
+    const uniqueCode = generateUniqueCode(usedCodes)
     const barcode = Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('')
     rows.push({
       ticket_id: ticketId,
@@ -574,7 +583,6 @@ export async function updateTicket(id, ticket) {
   if (error) throw error
 
   const branchId = currentBranchId()
-  const branchTag = branchId ? `${branchId.slice(-6)}` : '000000'
 
   // Count existing available instances
   const { data: existingAvail } = await supabase
@@ -588,10 +596,10 @@ export async function updateTicket(id, ticket) {
 
   // If quantity increased, create new available instances
   if (newQuantity > existingCount) {
+    const usedCodes = new Set()
     const rows = []
     for (let i = existingCount + 1; i <= newQuantity; i++) {
-      const serial = String(i).padStart(5, '0')
-      const uniqueCode = `${data.abbreviation}${data.date_time ? data.date_time.slice(0, 10).replace(/-/g, '') : '00000000'}${branchTag}${serial}`
+      const uniqueCode = generateUniqueCode(usedCodes)
       const barcode = Array.from({ length: 13 }, () => Math.floor(Math.random() * 10)).join('')
       rows.push({
         ticket_id: Number(id),
