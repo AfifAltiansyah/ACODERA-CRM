@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { X, Save, ArrowLeft, FileText } from 'lucide-react'
+import { X, Save, ArrowLeft, FileText, Eye } from 'lucide-react'
 import { addAutomation } from '../services/dataService'
 import { loadTemplate } from './InvoiceTemplate'
 
@@ -165,6 +165,7 @@ export function AddAutomationPage() {
   const isEmailType = (t) => t === 'Email Drip' || t === 'Marketing Campaign' || t === 'Invoice Reminder'
   const isInvoiceTrigger = INVOICE_TRIGGERS.includes(form.trigger)
   const [insertingTemplate, setInsertingTemplate] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   const handleInsertTemplate = async () => {
     setInsertingTemplate(true)
@@ -394,27 +395,46 @@ export function AddAutomationPage() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label htmlFor="automationBody" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email Body (HTML)</label>
-                  {isInvoiceTrigger && (
+                  <div className="flex items-center gap-2">
+                    {isInvoiceTrigger && (
+                      <button
+                        type="button"
+                        onClick={handleInsertTemplate}
+                        disabled={insertingTemplate}
+                        className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1 disabled:opacity-50 transition-colors"
+                      >
+                        <FileText size={14} />
+                        {insertingTemplate ? 'Loading...' : 'Insert from template'}
+                      </button>
+                    )}
                     <button
                       type="button"
-                      onClick={handleInsertTemplate}
-                      disabled={insertingTemplate}
-                      className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1 disabled:opacity-50 transition-colors"
+                      onClick={() => setShowPreview(p => !p)}
+                      className={`text-xs font-medium flex items-center gap-1 transition-colors ${
+                        showPreview ? 'text-brand-600' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                      }`}
                     >
-                      <FileText size={14} />
-                      {insertingTemplate ? 'Loading...' : 'Insert from template'}
+                      <Eye size={14} />
+                      {showPreview ? 'Hide Preview' : 'Preview'}
                     </button>
+                  </div>
+                </div>
+                <div className={showPreview ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : ''}>
+                  <textarea
+                    id="automationBody"
+                    name="automationBody"
+                    value={form.body}
+                    onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
+                    rows={showPreview ? 12 : 4}
+                    placeholder="<h2>Welcome!</h2><p>Thank you for joining...</p>"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-y font-mono"
+                  />
+                  {showPreview && (
+                    <div className="border border-slate-200 dark:border-slate-600 rounded-xl bg-white overflow-auto max-h-[500px] p-4">
+                      <div className="max-w-[600px] mx-auto" dangerouslySetInnerHTML={{ __html: form.body || '' }} />
+                    </div>
                   )}
                 </div>
-                <textarea
-                  id="automationBody"
-                  name="automationBody"
-                  value={form.body}
-                  onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
-                  rows={4}
-                  placeholder="<h2>Welcome!</h2><p>Thank you for joining...</p>"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-none font-mono"
-                />
               </div>
 
               {isInvoiceTrigger && (
