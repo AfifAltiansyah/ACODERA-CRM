@@ -82,8 +82,10 @@ export async function processPayment(webhookData) {
         console.error('[webhook] Failed to generate PDF:', pdfErr)
       }
 
+      // Use a custom header: the gateway strips the reserved 'apikey' header before
+      // it reaches trigger-automation, which would cause a 401 and no email.
       const headers = { 'Content-Type': 'application/json' }
-      if (AUTOMATION_SECRET) headers['apikey'] = AUTOMATION_SECRET
+      if (AUTOMATION_SECRET) headers['x-automation-secret'] = AUTOMATION_SECRET
       await fetch(`${EVENT_BASE}?event=invoice.paid`, {
         method: 'POST',
         headers,

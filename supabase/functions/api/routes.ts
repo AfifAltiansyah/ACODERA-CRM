@@ -1611,8 +1611,10 @@ export async function handleWebhook(req: Request, method: string, path: string):
   if (newStatus === 'paid' && oldStatus !== 'paid') {
     try {
       const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET') || ''
+      // Use a custom header: the gateway strips the reserved 'apikey' header before
+      // it reaches trigger-automation, which would cause a 401 and no email.
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (AUTOMATION_SECRET) headers['apikey'] = AUTOMATION_SECRET
+      if (AUTOMATION_SECRET) headers['x-automation-secret'] = AUTOMATION_SECRET
 
       const automationUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/trigger-automation?event=invoice.paid`
 
