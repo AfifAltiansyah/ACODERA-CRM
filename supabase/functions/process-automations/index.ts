@@ -10,22 +10,33 @@ import {
   logEmailResult,
 } from '../_shared/invoice.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': Deno.env.get('CORS_ORIGIN') || 'https://acodera-crm.netlify.app',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Reflect the caller's origin against an allowlist (CORS_ORIGIN, comma-separated).
+// Default '*' allows any origin — these endpoints are gated by AUTOMATION_SECRET, not CORS.
+function getAllowedOrigins(): string[] {
+  const env = Deno.env.get('CORS_ORIGIN') || '*'
+  return env.split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const allowed = getAllowedOrigins()
+  const origin = req.headers.get('origin') || ''
+  const allowOrigin = allowed.includes('*') ? (origin || '*') : (allowed.includes(origin) ? origin : allowed[0])
+  return {
+    'Access-Control-Allow-Origin': allowOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Max-Age': '86400',
+  }
 }
 
 const SENDER_EMAIL = Deno.env.get('SENDER_EMAIL') || 'noreply@acodera.com'
 const AUTOMATION_SECRET = Deno.env.get('AUTOMATION_SECRET')
 
-function corsResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
-}
-
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req)
+  const corsResponse = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
