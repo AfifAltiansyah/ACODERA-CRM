@@ -169,15 +169,14 @@ export function TransactionsPage() {
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden md:table-cell">{t.buyer_email}</td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-center">{t.quantity}</td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-right font-medium">{fc(t.total_amount)}</td>
-                <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
-                  <select value={t.status} onChange={ev => updateStatus(t.id, ev.target.value, t.transaction_id)} disabled={updating === t.id}
-                    className={`text-xs font-medium rounded-full px-2.5 py-1 border-0 cursor-pointer ${
-                      t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
-                      t.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
-                      'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
-                    }`}>
-                    {STATUS_OPTIONS.filter(s => s.value).map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
+                <td className="px-4 py-3 text-center">
+                  <span className={`inline-block text-xs font-medium rounded-full px-2.5 py-1 ${
+                    t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
+                    t.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400'
+                  }`}>
+                    {STATUS_OPTIONS.find(s => s.value === t.status)?.label || t.status}
+                  </span>
                 </td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden xl:table-cell text-xs whitespace-nowrap">
                   {t.purchased_at ? new Date(t.purchased_at).toLocaleString() : '—'}
