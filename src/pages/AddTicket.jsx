@@ -31,7 +31,11 @@ export function AddTicketPage() {
     mapsLink: '',
     dateTime: '',
     abbreviation: '',
+    autoCancelValue: '24',
+    autoCancelUnit: 'hours',
   })
+
+  const autoCancelMinutes = (Number(form.autoCancelValue) || 0) * (form.autoCancelUnit === 'minutes' ? 1 : 60)
 
   const abbreviation = form.abbreviation
 
@@ -82,7 +86,7 @@ export function AddTicketPage() {
     if (!form.dateTime) { alert('Please set a date and time'); return }
     setLoading(true)
     try {
-      await addTicket({ ...form, abbreviation, imageUrl })
+      await addTicket({ ...form, abbreviation, imageUrl, autoCancelMinutes: autoCancelMinutes || 1440 })
       navigate('/dashboard/tickets')
     } catch (err) {
       alert('Failed to create ticket: ' + (err.message || 'Unknown error'))
@@ -187,6 +191,24 @@ export function AddTicketPage() {
           <label htmlFor="ticketMapsLink" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Google Maps Link</label>
           <input id="ticketMapsLink" name="ticketMapsLink" type="url" value={form.mapsLink} onChange={(e) => setForm(p => ({ ...p, mapsLink: e.target.value }))}
             placeholder="https://maps.google.com/..." className="apple-input" />
+        </div>
+
+        <div>
+          <label htmlFor="ticketAutoCancel" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Auto-cancel unpaid invoices after</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input id="ticketAutoCancel" name="ticketAutoCancel" type="text" inputMode="numeric"
+              value={form.autoCancelValue}
+              onChange={(e) => setForm(p => ({ ...p, autoCancelValue: e.target.value.replace(/\D/g, '') }))}
+              className="apple-input" />
+            <select id="ticketAutoCancelUnit" name="ticketAutoCancelUnit"
+              value={form.autoCancelUnit}
+              onChange={(e) => setForm(p => ({ ...p, autoCancelUnit: e.target.value }))}
+              className="apple-input">
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+          <p className="text-[11px] text-[var(--muted)] mt-1.5">Invoices for this ticket are cancelled automatically if unpaid after this time.</p>
         </div>
 
         {form.quantity > 0 && form.title && form.dateTime && (

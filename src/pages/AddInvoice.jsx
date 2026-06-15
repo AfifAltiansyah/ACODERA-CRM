@@ -19,6 +19,13 @@ function generateItemCode() {
   return code
 }
 
+function formatAutoCancel(minutes) {
+  const m = Number(minutes) || 1440
+  if (m % 1440 === 0) { const d = m / 1440; return `${d} day${d > 1 ? 's' : ''}` }
+  if (m % 60 === 0) { const h = m / 60; return `${h} hour${h > 1 ? 's' : ''}` }
+  return `${m} minute${m > 1 ? 's' : ''}`
+}
+
 export function AddInvoicePage() {
   const navigate = useNavigate()
   const { formatCurrency: fc } = useCurrencyFormatter()
@@ -42,8 +49,6 @@ export function AddInvoicePage() {
     paymentMethod: 'qr_code',
     paymentDetail: '',
     status: 'pending',
-    expiresIn: '24',
-    expiresUnit: 'hours',
   })
 
   const BANK_OPTIONS = [
@@ -109,7 +114,6 @@ export function AddInvoicePage() {
         quantity: Number(form.quantity),
         pricePerUnit: Number(form.pricePerUnit),
         totalAmount: Number(form.pricePerUnit) * Number(form.quantity),
-        expiresIn: Number(form.expiresIn) || 24,
         transactionId: form.ticketId ? undefined : generateTransactionId(),
         customerId: '',
         template,
@@ -362,28 +366,15 @@ export function AddInvoicePage() {
 
             {form.status === 'pending' && (
               <div className="rounded-[14px] bg-amber-50 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 p-4">
-                <label htmlFor="invoiceExpiresIn" className="block text-[13px] font-medium text-amber-800 dark:text-amber-300 mb-2">Auto-cancel after</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    id="invoiceExpiresIn"
-                    name="invoiceExpiresIn"
-                    type="text" inputMode="numeric"
-                    value={form.expiresIn}
-                    onChange={(e) => setForm((p) => ({ ...p, expiresIn: e.target.value.replace(/\D/g, '') }))}
-                    className="apple-input"
-                  />
-                  <select
-                    id="invoiceExpiresUnit"
-                    name="invoiceExpiresUnit"
-                    value={form.expiresUnit}
-                    onChange={(e) => setForm((p) => ({ ...p, expiresUnit: e.target.value }))}
-                    className="apple-input"
-                  >
-                    <option value="minutes">Minutes</option>
-                    <option value="hours">Hours</option>
-                  </select>
-                </div>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">Invoice will be cancelled automatically if unpaid after this time.</p>
+                <p className="block text-[13px] font-medium text-amber-800 dark:text-amber-300 mb-1">Auto-cancel after</p>
+                <p className="text-[15px] font-semibold text-amber-900 dark:text-amber-200">
+                  {selectedTicket ? formatAutoCancel(selectedTicket.autoCancelMinutes) : '24 hours'}
+                </p>
+                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">
+                  {selectedTicket
+                    ? "Set on the ticket. Invoice is cancelled automatically if unpaid after this time."
+                    : "Default window. Invoice is cancelled automatically if unpaid after this time."}
+                </p>
               </div>
             )}
           </div>

@@ -441,6 +441,15 @@ export function getAnalyticsData() {
 
 // ─── Tickets ───────────────────────────────────────────────
 
+// The app treats all wall-clock times as Asia/Jakarta (WIB, fixed UTC+07:00, no DST).
+// datetime-local inputs are naive ("YYYY-MM-DDTHH:mm"); convert to a real UTC instant
+// before persisting so the stored TIMESTAMPTZ is unambiguous.
+function jakartaInputToISO(naive) {
+  if (!naive) return null
+  const d = new Date(`${naive}:00+07:00`)
+  return isNaN(d.getTime()) ? null : d.toISOString()
+}
+
 function formatTicket(t) {
   const dt = t.date_time ? new Date(t.date_time) : null
   return {
@@ -454,6 +463,9 @@ function formatTicket(t) {
     location: t.location || '',
     imageUrl: t.image_url || '',
     mapsLink: t.maps_link || '',
+    // Raw ISO instant for accurate round-tripping back into edit forms.
+    dateTimeRaw: t.date_time || '',
+    autoCancelMinutes: t.auto_cancel_minutes ?? 1440,
     dateTime: dt ? dt.toLocaleString('en-US', {
       year: 'numeric', month: 'short', day: '2-digit',
       hour: '2-digit', minute: '2-digit', hour12: false,
@@ -526,8 +538,9 @@ export async function addTicket(ticket) {
       quantity: Number(ticket.quantity) || 1,
       location: ticket.location || '',
       maps_link: ticket.mapsLink || null,
-      date_time: ticket.dateTime || null,
+      date_time: jakartaInputToISO(ticket.dateTime),
       image_url: ticket.imageUrl || null,
+      auto_cancel_minutes: Number(ticket.autoCancelMinutes) || 1440,
     })])
     .select()
     .single()
@@ -573,8 +586,9 @@ export async function updateTicket(id, ticket) {
       quantity: Number(ticket.quantity) || 1,
       location: ticket.location || '',
       maps_link: ticket.mapsLink || null,
-      date_time: ticket.dateTime || null,
+      date_time: jakartaInputToISO(ticket.dateTime),
       image_url: ticket.imageUrl || null,
+      auto_cancel_minutes: Number(ticket.autoCancelMinutes) || 1440,
     })
     .eq('id', Number(id))
     .select()
@@ -860,6 +874,7 @@ export async function getAvailableTickets() {
         prefix: `${t.abbreviation}${dateStr}`,
         price: Number(t.price),
         availableCount,
+        autoCancelMinutes: t.auto_cancel_minutes ?? 1440,
       }
     })
     .filter(t => t.availableCount > 0)
@@ -894,6 +909,11 @@ export async function addInvoice(invoice) {
     if (fetchError) throw fetchError
     if (!available || available.length < qty) throw new Error('Not enough available tickets')
 
+    // Auto-cancel window is configured on the ticket, not per invoice.
+    const { data: ticketRow } = await supabase
+      .from('tickets').select('auto_cancel_minutes').eq('id', Number(invoice.ticketId)).single()
+    const autoCancelMinutes = Number(ticketRow?.auto_cancel_minutes) || 1440
+
     const branchId = currentBranchId()
     for (const inst of available) {
       const updateData = {
@@ -908,7 +928,7 @@ export async function addInvoice(invoice) {
         total_amount: Number(invoice.pricePerUnit),
         purchased_at: now.toISOString(),
         expires_at: (invoice.status || 'pending') === 'pending'
-          ? new Date(Date.now() + (Number(invoice.expiresIn) || 24) * (invoice.expiresUnit === 'minutes' ? 60000 : 3600000)).toISOString()
+          ? new Date(Date.now() + autoCancelMinutes * 60000).toISOString()
           : null,
       }
       if (branchId) updateData.branch = branchId
@@ -984,8 +1004,9 @@ export async function addInvoice(invoice) {
       payment_detail: invoice.paymentDetail || '',
       status: invoice.status || 'pending',
       purchased_at: new Date().toISOString(),
+      // Manual (non-ticket) invoices have no ticket to reference; default 24h.
       expires_at: (invoice.status || 'pending') === 'pending'
-        ? new Date(Date.now() + (Number(invoice.expiresIn) || 24) * (invoice.expiresUnit === 'minutes' ? 60000 : 3600000)).toISOString()
+        ? new Date(Date.now() + (Number(invoice.autoCancelMinutes) || 1440) * 60000).toISOString()
         : null,
     })])
     .select()

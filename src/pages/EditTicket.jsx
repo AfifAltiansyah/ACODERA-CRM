@@ -27,20 +27,26 @@ export function EditTicketPage() {
     }
   }, [])
 
-  const dtForInput = ticketData?.dateTime
-    ? (() => {
-        try {
-          const d = new Date(ticketData.dateTime)
-          if (isNaN(d.getTime())) return ''
-          const y = d.getFullYear()
-          const m = String(d.getMonth() + 1).padStart(2, '0')
-          const day = String(d.getDate()).padStart(2, '0')
-          const h = String(d.getHours()).padStart(2, '0')
-          const min = String(d.getMinutes()).padStart(2, '0')
-          return `${y}-${m}-${day}T${h}:${min}`
-        } catch { return '' }
-      })()
-    : ''
+  // Rebuild the datetime-local value from the raw UTC instant, expressed in
+  // Asia/Jakarta — the canonical timezone the rest of the app displays in.
+  // (Parsing the localized display string with the browser clock was unreliable.)
+  const dtForInput = (() => {
+    const iso = ticketData?.dateTimeRaw
+    if (!iso) return ''
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return ''
+    const p = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(d).reduce((a, x) => (a[x.type] = x.value, a), {})
+    return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`
+  })()
+
+  // Auto-cancel is stored in minutes; show as whole hours when divisible.
+  const acInit = (() => {
+    const m = Number(ticketData?.autoCancelMinutes) || 1440
+    return m % 60 === 0 ? { value: String(m / 60), unit: 'hours' } : { value: String(m), unit: 'minutes' }
+  })()
 
   const [form, setForm] = useState({
     title: ticketData?.title || '',
@@ -51,7 +57,11 @@ export function EditTicketPage() {
     mapsLink: ticketData?.mapsLink || '',
     dateTime: dtForInput,
     abbreviation: ticketData?.abbreviation || extractAbbreviation(ticketData?.title || ''),
+    autoCancelValue: acInit.value,
+    autoCancelUnit: acInit.unit,
   })
+
+  const autoCancelMinutes = (Number(form.autoCancelValue) || 0) * (form.autoCancelUnit === 'minutes' ? 1 : 60)
   // Existing tickets already have an abbreviation, so don't auto-overwrite from title edits.
   const [abbrEdited, setAbbrEdited] = useState(true)
 
@@ -106,7 +116,7 @@ export function EditTicketPage() {
     if (!form.dateTime) { alert('Please set a date and time'); return }
     setLoading(true)
     try {
-      await updateTicket(id, { ...form, abbreviation, imageUrl })
+      await updateTicket(id, { ...form, abbreviation, imageUrl, autoCancelMinutes: autoCancelMinutes || 1440 })
       navigate('/dashboard/tickets')
     } catch (err) {
       alert('Failed to update ticket: ' + (err.message || 'Unknown error'))
@@ -210,6 +220,24 @@ export function EditTicketPage() {
           <label htmlFor="ticketMapsLink" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Google Maps Link</label>
           <input id="ticketMapsLink" name="ticketMapsLink" type="url" value={form.mapsLink} onChange={(e) => setForm(p => ({ ...p, mapsLink: e.target.value }))}
             placeholder="https://maps.google.com/..." className="apple-input" />
+        </div>
+
+        <div>
+          <label htmlFor="ticketAutoCancel" className="block text-[13px] font-medium text-[var(--ink)] mb-1.5">Auto-cancel unpaid invoices after</label>
+          <div className="grid grid-cols-2 gap-2">
+            <input id="ticketAutoCancel" name="ticketAutoCancel" type="text" inputMode="numeric"
+              value={form.autoCancelValue}
+              onChange={(e) => setForm(p => ({ ...p, autoCancelValue: e.target.value.replace(/\D/g, '') }))}
+              className="apple-input" />
+            <select id="ticketAutoCancelUnit" name="ticketAutoCancelUnit"
+              value={form.autoCancelUnit}
+              onChange={(e) => setForm(p => ({ ...p, autoCancelUnit: e.target.value }))}
+              className="apple-input">
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+            </select>
+          </div>
+          <p className="text-[11px] text-[var(--muted)] mt-1.5">Invoices for this ticket are cancelled automatically if unpaid after this time.</p>
         </div>
 
         {form.quantity > 0 && form.title && form.dateTime && (
