@@ -3,37 +3,26 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { DarkModeToggle } from './DarkModeToggle'
-import { sendCode, verifyCode, resetPassword, signInWithGoogle, signInWithGitHub, oauthCallback } from '../utils/auth'
+import { sendCode, resetPassword, signInWithGoogle, signInWithGitHub } from '../utils/auth'
 import { supabase } from '../lib/supabase'
 import logo from '../assets/Acodera-logo.png'
 
-function genCaptcha() {
-  const a = Math.floor(Math.random() * 9) + 2
-  const b = Math.floor(Math.random() * 9) + 2
-  return { a, b, answer: a + b, text: `${a} + ${b}` }
-}
-
 export function RightPanel({ onSuccess }) {
-  const { login, register, oauthLogin } = useAuth()
+  const { login, oauthLogin } = useAuth()
 
+  // Self-signup is disabled — this panel only handles sign-in, forgot/reset
+  // password, and OAuth. New CRM accounts must be created by an admin.
   const [mode, setMode] = useState('login')
-  const [tab, setTab] = useState('login')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [code, setCode] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [remember, setRemember] = useState(false)
 
-  const [captcha, setCaptcha] = useState(genCaptcha)
-  const [captchaAnswer, setCaptchaAnswer] = useState('')
-
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
-  const [codeSent, setCodeSent] = useState(false)
-  const [verified, setVerified] = useState(false)
   const [passUpdated, setPassUpdated] = useState(false)
   const [devCode, setDevCode] = useState(null)
 
@@ -57,16 +46,11 @@ export function RightPanel({ onSuccess }) {
   }, [])
 
   const switchTab = (t) => {
-    setTab(t)
     setMode(t)
     setErrors({})
     setCode('')
-    setCodeSent(false)
-    setVerified(false)
     setDevCode(null)
     setPassUpdated(false)
-    setCaptcha(genCaptcha())
-    setCaptchaAnswer('')
   }
 
   const goToMode = (m) => {
@@ -74,8 +58,6 @@ export function RightPanel({ onSuccess }) {
     setErrors({})
     setCode('')
     setDevCode(null)
-    setCodeSent(false)
-    setVerified(false)
   }
 
   const validateLogin = () => {
@@ -102,52 +84,6 @@ export function RightPanel({ onSuccess }) {
     }
   }
 
-  const validateSignUp = () => {
-    const e = {}
-    if (!name.trim()) e.name = 'Required'
-    if (!email.trim()) e.email = 'Required'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Invalid email'
-    if (!password) e.password = 'Required'
-    else if (password.length < 6) e.password = 'At least 6 characters'
-    if (password !== confirmPassword) e.confirmPassword = 'Passwords do not match'
-    if (!captchaAnswer || parseInt(captchaAnswer) !== captcha.answer) e.captcha = 'Incorrect answer'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
-
-  const handleSignUp = async (e) => {
-    e.preventDefault()
-    if (!validateSignUp()) return
-    setLoading(true)
-    setErrors({})
-    try {
-      const resp = await sendCode(email, 'register')
-      setDevCode(resp.code || null)
-      setCodeSent(true)
-      goToMode('verify')
-    } catch (err) {
-      setErrors({ form: err.message })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleVerify = async (e) => {
-    e.preventDefault()
-    if (!code) { setErrors({ code: 'Required' }); return }
-    setLoading(true)
-    setErrors({})
-    try {
-      await verifyCode(email, code, 'register')
-      await register(email, password, name)
-      onSuccess()
-    } catch (err) {
-      setErrors({ form: err.message })
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const handleForgot = async (e) => {
     e.preventDefault()
     if (!email.trim()) { setErrors({ email: 'Required' }); return }
@@ -156,7 +92,6 @@ export function RightPanel({ onSuccess }) {
     try {
       const resp = await sendCode(email, 'reset')
       setDevCode(resp.code || null)
-      setCodeSent(true)
       goToMode('reset')
     } catch (err) {
       setErrors({ form: err.message })
@@ -213,34 +148,14 @@ export function RightPanel({ onSuccess }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
       >
-        {mode !== 'forgot' && mode !== 'verify' && mode !== 'reset' && (
-          <div className="flex gap-1 mb-10 p-0.5 rounded-full bg-[var(--parchment)]">
-            {['login', 'signup'].map(t => (
-              <button key={t} onClick={() => switchTab(t)}
-                className={`flex-1 rounded-full py-2.5 text-[13px] font-medium transition-all duration-200 ${
-                  tab === t
-                    ? 'bg-[var(--canvas)] text-[var(--ink)] shadow-sm'
-                    : 'text-[var(--muted)] hover:text-[var(--ink)]'
-                }`}
-              >
-                {t === 'login' ? 'Sign In' : 'Sign Up'}
-              </button>
-            ))}
-          </div>
-        )}
-
         <div className="mb-8">
           <h1 className="text-[32px] font-semibold tracking-[-0.02em] text-[var(--ink)] leading-[1.1]">
             {mode === 'login' && 'Welcome back.'}
-            {mode === 'signup' && 'Create account.'}
-            {mode === 'verify' && 'Check your email.'}
             {mode === 'forgot' && 'Reset password.'}
             {mode === 'reset' && 'Enter new password.'}
           </h1>
           <p className="mt-2 text-[15px] text-[var(--muted)] leading-[1.4] tracking-[-0.01em]">
             {mode === 'login' && 'Sign in to continue to your dashboard.'}
-            {mode === 'signup' && 'Fill in your details to get started.'}
-            {mode === 'verify' && `We sent a code to ${email}`}
             {mode === 'forgot' && "Enter your email and we'll send you a reset code."}
             {mode === 'reset' && 'Enter the code from your email and your new password.'}
           </p>
@@ -257,8 +172,6 @@ export function RightPanel({ onSuccess }) {
             transition={{ duration: 0.2 }}
             onSubmit={
               mode === 'login' ? handleLogin :
-              mode === 'signup' ? handleSignUp :
-              mode === 'verify' ? handleVerify :
               mode === 'forgot' ? handleForgot :
               handleReset
             }
@@ -293,64 +206,6 @@ export function RightPanel({ onSuccess }) {
                   {loading ? <Loader2 size={17} className="animate-spin" /> : 'Sign In'}
                 </button>
               </>
-            )}
-
-            {mode === 'signup' && (
-              <>
-                <input id="signupName" name="signupName" type="text" placeholder="Full name" autoComplete="name"
-                  value={name} onChange={e => { setName(e.target.value); setErrors(p => ({ ...p, name: undefined })) }}
-                  className={`apple-input ${errors.name ? '!ring-2 !ring-red-500/50' : ''}`} />
-                <input id="signupEmail" name="signupEmail" type="email" placeholder="Email address" autoComplete="email"
-                  value={email} onChange={e => { setEmail(e.target.value); setErrors(p => ({ ...p, email: undefined })) }}
-                  className={`apple-input ${errors.email ? '!ring-2 !ring-red-500/50' : ''}`} />
-                <div className="relative">
-                  <input id="signupPassword" name="signupPassword" type={showPassword ? 'text' : 'password'} placeholder="Password (min. 6 chars)" autoComplete="new-password"
-                    value={password} onChange={e => { setPassword(e.target.value); setErrors(p => ({ ...p, password: undefined })) }}
-                    className={`apple-input pr-12 ${errors.password ? '!ring-2 !ring-red-500/50' : ''}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
-                    {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                  </button>
-                </div>
-                <input id="signupConfirmPassword" name="signupConfirmPassword" type="password" placeholder="Confirm password" autoComplete="new-password"
-                  value={confirmPassword} onChange={e => { setConfirmPassword(e.target.value); setErrors(p => ({ ...p, confirmPassword: undefined })) }}
-                  className={`apple-input ${errors.confirmPassword ? '!ring-2 !ring-red-500/50' : ''}`} />
-                <div className="rounded-[14px] border border-[var(--hairline)] bg-[var(--parchment)] p-4">
-                  <label htmlFor="signupCaptcha" className="text-[13px] text-[var(--muted)] mb-2 block">What is <span className="font-semibold text-[var(--ink)]">{captcha.text}</span>?</label>
-                  <input id="signupCaptcha" name="signupCaptcha" type="number" placeholder="Answer"
-                    value={captchaAnswer}
-                    onChange={e => { setCaptchaAnswer(e.target.value); setErrors(p => ({ ...p, captcha: undefined })) }}
-                    className={`apple-input ${errors.captcha ? '!ring-2 !ring-red-500/50' : ''}`} />
-                  {errors.captcha && <p className="mt-1.5 text-[12px] text-red-500">{errors.captcha}</p>}
-                </div>
-                <button type="submit" disabled={loading} className="apple-btn">
-                  {loading ? <Loader2 size={17} className="animate-spin" /> : 'Create Account'}
-                </button>
-              </>
-            )}
-
-            {mode === 'verify' && (
-              <div className="space-y-5">
-                {devCode && (
-                  <div className="rounded-[14px] border border-[var(--accent)]/20 bg-[var(--accent)]/5 px-5 py-4 text-center">
-                    <p className="text-[12px] text-[var(--accent)]/70 mb-1.5 font-medium tracking-[-0.01em]">Sandbox mode — your code</p>
-                    <p className="text-[28px] font-mono font-bold tracking-[0.2em] text-[var(--accent)]">{devCode}</p>
-                  </div>
-                )}
-                <input id="verifyCode" name="verifyCode" type="text" inputMode="numeric" maxLength={6} placeholder="000000"
-                  value={code}
-                  onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="apple-input text-center text-[20px] font-mono tracking-[0.3em]" />
-                <button type="submit" disabled={loading} className="apple-btn">
-                  {loading ? <Loader2 size={17} className="animate-spin" /> : 'Verify & Create Account'}
-                </button>
-                <div className="text-center">
-                  <button type="button" onClick={() => { setCodeSent(false); goToMode('signup') }}
-                    className="text-[13px] text-[var(--muted)] hover:text-[var(--ink)] transition-colors">
-                    Use a different email
-                  </button>
-                </div>
-              </div>
             )}
 
             {mode === 'forgot' && (
@@ -418,7 +273,7 @@ export function RightPanel({ onSuccess }) {
           </motion.form>
         </AnimatePresence>
 
-        {mode !== 'verify' && mode !== 'reset' && !passUpdated && (
+        {mode !== 'reset' && !passUpdated && (
           <>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">

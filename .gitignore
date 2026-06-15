@@ -42,3 +42,4 @@ testsprite_tests/
 
 # Local Netlify folder
 .netlify
+.DS_Store

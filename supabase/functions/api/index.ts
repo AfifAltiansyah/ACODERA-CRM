@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts'
 import { corsHeaders, jsonResponse, verifyToken, runSql } from './lib.ts'
-import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handlePaymentOptions, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal, handleCustomerRegister, handleCustomerLogin, handleCustomerMe, handleWebhook } from './routes.ts'
+import { handleAuthLogin, handleAuthRegister, handleAuthOAuth, handleAuthMe, handleSendCode, handleVerifyCode, handleResetPassword, handleUsers, handleApiKeys, handleAuditLogs, handlePaymentOptions, handleInvoiceTemplate, handleGatewayConfig, handleDataRoute, handleExternal, handleCustomerLogin, handleCustomerMe, handleWebhook } from './routes.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -70,7 +70,9 @@ async function route(req: Request, path: string, method: string): Promise<Respon
   }
 
   if (path.startsWith('/customer/register')) {
-    return handleCustomerRegister(req)
+    // Customer self-registration is disabled — customers must be created by an
+    // admin. To re-enable, restore: return handleCustomerRegister(req)
+    return jsonResponse({ error: 'Customer registration is disabled.' }, 403)
   }
 
   if (path.startsWith('/customer/login')) {
@@ -128,6 +130,8 @@ ALTER TABLE automation_logs ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT NULL;
 ALTER TABLE scheduled_emails ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT NULL;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id TEXT DEFAULT NULL;
 CREATE TABLE IF NOT EXISTS verification_codes (id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, email TEXT NOT NULL, code TEXT NOT NULL, type TEXT NOT NULL, verified BOOLEAN DEFAULT FALSE, expires_at TIMESTAMPTZ NOT NULL, created_at TIMESTAMPTZ DEFAULT NOW());
+ALTER TABLE verification_codes ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON verification_codes FROM anon, authenticated;
 DELETE FROM automation_logs; DELETE FROM scheduled_emails;
 DELETE FROM transactions; DELETE FROM tickets;
 DELETE FROM reviews; DELETE FROM flows;

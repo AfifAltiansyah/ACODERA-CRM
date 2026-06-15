@@ -319,7 +319,15 @@ export function passwordResetHtml(code: string): string {
 // ─── Verification Codes (stored in database) ──────────────────────────────
 
 export function generateCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000))
+  // Cryptographically secure 6-digit code. Math.random() is NOT a CSPRNG and
+  // produces predictable values — unacceptable for password-reset/verification codes.
+  // Rejection sampling against the largest multiple of 900000 below 2^32 avoids modulo bias.
+  const arr = new Uint32Array(1)
+  const limit = 4_294_800_000 // 4772 * 900000, the largest multiple of 900000 < 2^32
+  do {
+    crypto.getRandomValues(arr)
+  } while (arr[0] >= limit)
+  return String(100000 + (arr[0] % 900000))
 }
 
 export async function storeCode(email: string, code: string, type: string): Promise<void> {
@@ -339,6 +347,7 @@ export async function verifyCode(email: string, code: string, type: string): Pro
     .select('*')
     .eq('email', email)
     .eq('type', type)
+    .eq('verified', false) // single-use: a consumed code can never be replayed
     .gte('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
     .limit(1)
@@ -346,8 +355,16 @@ export async function verifyCode(email: string, code: string, type: string): Pro
   if (!data || data.length === 0) return false
   if (data[0].code !== code) return false
 
-  await supabase.from('verification_codes').update({ verified: true }).eq('id', data[0].id)
-  return true
+  // Atomically consume the code: only succeeds if it is still unverified, which
+  // closes the race where two concurrent requests both pass the check above.
+  const { data: consumed } = await supabase
+    .from('verification_codes')
+    .update({ verified: true })
+    .eq('id', data[0].id)
+    .eq('verified', false)
+    .select('id')
+
+  return !!(consumed && consumed.length > 0)
 }
 
 export async function isEmailVerified(email: string): Promise<boolean> {
