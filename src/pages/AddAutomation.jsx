@@ -430,7 +430,7 @@ export function AddAutomationPage() {
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2.5 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all resize-y font-mono"
                   />
                   {showPreview && (
-                    <div className="border border-slate-200 dark:border-slate-600 rounded-xl bg-white overflow-auto max-h-[500px] p-4">
+                    <div className="border border-slate-200 dark:border-slate-600 rounded-xl bg-white p-4">
                       <div className="max-w-[600px] mx-auto" dangerouslySetInnerHTML={{ __html: form.body || '' }} />
                     </div>
                   )}

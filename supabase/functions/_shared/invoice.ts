@@ -490,99 +490,114 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     let y = height - M
     const rEdge = width - M
 
-    // ── Header: Logo + Company (left) | INVOICE + Meta (right) ──
+    // ── Accent Header Bar ──
+    const barH = 80
+    const barY = y - barH + 4
+    drawRect(M, barY, contentW, barH, accent)
+
+    // Logo inside bar (left)
     const logo = await embedLogo()
-    let leftColX = M
+    let barLeftX = M + 20
+    const barMidY = barY + barH / 2
 
-    // Logo / Initial square
     if (logo) {
-      const dims = logo.scaleToFit(50, 50)
-      page.drawImage(logo, { x: M, y: y - dims.height, width: dims.width, height: dims.height })
-      leftColX = M + dims.width + 14
+      const dims = logo.scaleToFit(36, 36)
+      page.drawImage(logo, { x: M + 20, y: barMidY - dims.height / 2, width: dims.width, height: dims.height })
+      barLeftX = M + 20 + dims.width + 14
     } else if (tpl.logoInitial) {
-      drawRect(M, y - 50, 50, 50, accent)
-      drawText(tpl.logoInitial, M + 15, y - 16, fontBold, 24, rgb(1, 1, 1))
-      leftColX = M + 64
+      const ls = 32
+      drawRect(M + 20, barMidY - ls / 2, ls, ls, rgb(1, 1, 1))
+      drawText(tpl.logoInitial, M + 20 + 6, barMidY + 5, fontBold, 18, accent)
+      barLeftX = M + 20 + ls + 14
     }
 
-    // Company name - top-aligned with logo
-    drawText(tpl.companyName, leftColX, y - 8, fontBold, 18, accent)
+    // Company name inside bar (left)
+    drawText(tpl.companyName, barLeftX, barMidY + 6, fontBold, 16, rgb(1, 1, 1))
 
-    // Contact info below company name (always renders, handles empty gracefully)
-    let ciY = y - 24
-    drawText(`${tpl.email}${tpl.phone ? '  |  ' + tpl.phone : ''}`, leftColX, ciY, font, 9, rgb(0.45, 0.45, 0.5))
-    ciY -= 14
+    // INVOICE title inside bar (right)
+    drawRight('INVOICE', rEdge - 20, barMidY + 7, fontBold, 20, rgb(1, 1, 1))
+
+    // Contact info below bar
+    y = barY - 4
+    drawText(`${tpl.email}${tpl.phone ? '  |  ' + tpl.phone : ''}`, M, y, font, 8, rgb(0.5, 0.5, 0.55))
     if (tpl.address) {
-      drawText(tpl.address, leftColX, ciY, font, 9, rgb(0.45, 0.45, 0.5))
+      drawText(tpl.address, M, y - 12, font, 8, rgb(0.5, 0.5, 0.55))
+      y -= 16
+    } else {
+      y -= 14
     }
 
-    // Right column: INVOICE title and meta (all right-aligned from rEdge)
-    drawRight('INVOICE', rEdge, y - 8, fontBold, 24, accent)
-    drawRight(inv.transaction_id || '', rEdge, y - 28, font, 10, rgb(0.3, 0.3, 0.38))
-    drawRight(dateTime, rEdge, y - 44, font, 9, rgb(0.45, 0.45, 0.5))
+    // ── Customer & Transaction Section ──
+    y -= 10
 
-    // Status badge - right-aligned
-    const badgeW = textW(statusLabel, fontBold, 10) + 24
-    const badgeH = 22
-    const badgeX = rEdge - badgeW
-    const badgeY = y - 72
-    drawRect(badgeX, badgeY, badgeW, badgeH, rgb(0.96, 0.96, 0.97))
-    page.drawRectangle({
-      x: badgeX, y: badgeY, width: badgeW, height: badgeH,
-      borderColor: rgb(0.9, 0.9, 0.92), borderWidth: 0.5,
-    })
-    drawText(statusLabel, badgeX + 12, badgeY + 7, fontBold, 10, statusColor)
-
-    y -= 100
-
-    // ── Accent line ──
-    drawLine(M, y, rEdge, y, accent, 2.5)
-    y -= 28
-
-    // ── Bill To (left) | Payment Details (right) ──
-    drawText('BILL TO', M, y, fontBold, 8, rgb(0.55, 0.55, 0.6))
-    drawText('PAYMENT DETAILS', rEdge - 200, y, fontBold, 8, rgb(0.55, 0.55, 0.6))
-    y -= 16
-
-    // Left: customer info
-    let leftY = y
-    drawText(customerName, M, leftY, fontBold, 12, rgb(0.06, 0.06, 0.14))
-    leftY -= 15
+    // Left: Bill To
+    drawText('BILL TO', M, y, fontBold, 8, rgb(0.5, 0.5, 0.55))
+    y -= 14
+    drawText(customerName, M, y, fontBold, 12, rgb(0.06, 0.06, 0.14))
+    y -= 15
     if (customerEmail) {
-      drawText(customerEmail, M, leftY, font, 9, rgb(0.4, 0.4, 0.45))
-      leftY -= 14
+      drawText(customerEmail, M, y, font, 9, rgb(0.4, 0.4, 0.45))
+      y -= 13
     }
     if (customerPhone) {
-      drawText(customerPhone, M, leftY, font, 9, rgb(0.4, 0.4, 0.45))
-      leftY -= 14
+      drawText(customerPhone, M, y, font, 9, rgb(0.4, 0.4, 0.45))
+      y -= 13
     }
 
-    // Right: payment details
-    let rightY = y
-    const pdX = rEdge - 200
+    // Right: TXN details
+    const txX = rEdge - 200
+    drawText('TRANSACTION', txX, y + (customerPhone ? 36 : customerEmail ? 23 : 14), fontBold, 8, rgb(0.5, 0.5, 0.55))
+    y = Math.min(y, y) // keep y as lowest point
+
+    // Re-calc right side independently
+    let ry = y
+    if (customerPhone) ry = y + 36 + 14
+    else if (customerEmail) ry = y + 23 + 14
+    else ry = y + 14 + 14
+
+    drawText(inv.transaction_id || '', txX, ry, font, 10, rgb(0.3, 0.3, 0.38))
+    ry -= 15
+    drawText(dateTime, txX, ry, font, 9, rgb(0.45, 0.45, 0.5))
+    ry -= 18
+
+    // Status badge
+    const badgeW = textW(statusLabel, fontBold, 10) + 20
+    const badgeH = 20
+    drawRect(txX, ry - badgeH + 2, badgeW, badgeH, rgb(0.96, 0.96, 0.97))
+    page.drawRectangle({
+      x: txX, y: ry - badgeH + 2, width: badgeW, height: badgeH,
+      borderColor: rgb(0.9, 0.9, 0.92), borderWidth: 0.5,
+    })
+    drawText(statusLabel, txX + 10, ry - 3, fontBold, 10, statusColor)
+
+    // Payment details (below badge if present)
+    let rightBottom = ry - badgeH - 2
     if (paymentDetail) {
-      drawText(`Method: ${paymentDetail.label}`, pdX, rightY, font, 9, rgb(0.2, 0.2, 0.28))
-      rightY -= 14
+      drawText(`Method: ${paymentDetail.label}`, txX, rightBottom, font, 9, rgb(0.2, 0.2, 0.28))
+      rightBottom -= 13
       if (paymentDetail.detail && paymentDetail.detail !== paymentDetail.label) {
-        drawText(`Info: ${paymentDetail.detail}`, pdX, rightY, font, 9, rgb(0.2, 0.2, 0.28))
-        rightY -= 14
+        drawText(`Info: ${paymentDetail.detail}`, txX, rightBottom, font, 9, rgb(0.2, 0.2, 0.28))
+        rightBottom -= 13
       }
     }
 
-    y = Math.min(leftY, rightY) - 4
+    y = Math.min(y, rightBottom) - 6
 
     // ── Ticket name (if exists) ──
     const ticketName = inv.item_name || inv.ticket_title || ''
     if (ticketName) {
+      y -= 8
       const ticketLines = wrapText(`Ticket: ${ticketName}`, font, 10, contentW - 24)
-      const ticketH = Math.max(30, 16 + ticketLines.length * 14)
+      const ticketH = Math.max(28, 14 + ticketLines.length * 14)
       drawRect(M, y - ticketH + 4, contentW, ticketH, rgb(0.94, 0.97, 1))
       page.drawRectangle({ x: M, y: y - ticketH + 4, width: contentW, height: ticketH, borderColor: rgb(0.68, 0.82, 1), borderWidth: 0.5 })
       drawWrapped(`Ticket: ${ticketName}`, M + 12, y - 8, font, 10, rgb(0, 0.4, 0.8), contentW - 24, 14)
-      y -= ticketH + 14
+      y -= ticketH + 10
     }
 
     // ── Items Table ──
+    y -= 10
+    const creamBg = rgb(0.937, 0.918, 0.89) // #efeae3
     const col1X = M
     const col1W = contentW * 0.44
     const col2X = col1X + col1W
@@ -592,61 +607,61 @@ export async function generateInvoicePdf(inv: any, template: any, branchId?: str
     const col4X = col3X + col3W
     const col4W = contentW - col1W - col2W - col3W
 
-    // Table header row (accent bg, white text)
-    const headerH = 26
-    drawRect(M, y - headerH + 4, contentW, headerH, accent)
-    drawText('Item', col1X + 12, y + 4 - 8, fontBold, 8, rgb(1, 1, 1))
-    drawText('Qty', col2X + col2W / 2 - textW('Qty', fontBold, 8) / 2, y + 4 - 8, fontBold, 8, rgb(1, 1, 1))
-    drawText('Price', col4X - 10 - textW('Price', fontBold, 8), y + 4 - 8, fontBold, 8, rgb(1, 1, 1))
-    drawText('Total', rEdge - 12 - textW('Total', fontBold, 8), y + 4 - 8, fontBold, 8, rgb(1, 1, 1))
-    y -= headerH + 4
+    // Table header (cream bg, dark text)
+    const headerH = 28
+    drawRect(M, y - headerH + 4, contentW, headerH, creamBg)
+    drawLine(M, y - headerH + 4, rEdge, y - headerH + 4, rgb(0.88, 0.88, 0.85))
+    drawLine(M, y + 4, rEdge, y + 4, rgb(0.88, 0.88, 0.85))
+    drawText('Item', col1X + 14, y + 4 - 8, fontBold, 8, rgb(0.3, 0.3, 0.3))
+    drawText('Qty', col2X + col2W / 2 - textW('Qty', fontBold, 8) / 2, y + 4 - 8, fontBold, 8, rgb(0.3, 0.3, 0.3))
+    drawText('Price', col4X - 12 - textW('Price', fontBold, 8), y + 4 - 8, fontBold, 8, rgb(0.3, 0.3, 0.3))
+    drawText('Total', rEdge - 14 - textW('Total', fontBold, 8), y + 4 - 8, fontBold, 8, rgb(0.3, 0.3, 0.3))
+    y -= headerH + 6
 
-    // Table data row
-    const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 11, col1W - 24)
-    const codeLines = wrapText(summaryItem.code || '-', font, 8, col1W - 24)
-    const rowH = Math.max(42, 18 + nameLines.length * 14 + codeLines.length * 10)
+    // Data row
+    const nameLines = wrapText(summaryItem.name || 'Invoice Item', fontBold, 11, col1W - 28)
+    const codeLines = wrapText(summaryItem.code || '-', font, 8, col1W - 28)
+    const rowH = Math.max(40, 18 + nameLines.length * 14 + codeLines.length * 10)
 
-    drawLine(M, y, rEdge, y, rgb(0.92, 0.94, 0.96))
+    drawLine(M, y, rEdge, y, rgb(0.92, 0.92, 0.9))
 
-    // Left column: item name + code
     let cellY = y - 10
-    nameLines.forEach((line, i) => drawText(line, col1X + 12, cellY - i * 14, fontBold, 11, rgb(0.06, 0.06, 0.14)))
+    nameLines.forEach((line, i) => drawText(line, col1X + 14, cellY - i * 14, fontBold, 11, rgb(0.06, 0.06, 0.14)))
     const codeStartY = cellY - nameLines.length * 14 - 3
-    codeLines.forEach((line, i) => drawText(line, col1X + 12, codeStartY - i * 10, font, 8, rgb(0.45, 0.45, 0.5)))
+    codeLines.forEach((line, i) => drawText(line, col1X + 14, codeStartY - i * 10, font, 8, rgb(0.45, 0.45, 0.5)))
 
-    // Right columns: vertically centered in the row
     const cellMidY = y - rowH / 2 + 3
     drawText(String(summaryItem.quantity || 1), col2X + col2W / 2 - textW(String(summaryItem.quantity || 1), font, 10) / 2, cellMidY, font, 10, rgb(0, 0, 0))
-    drawRight(`${cur}${Number(summaryItem.price || 0).toLocaleString()}`, col4X - 12, cellMidY, font, 10, rgb(0, 0, 0))
-    drawRight(`${cur}${Number(summaryItem.total || 0).toLocaleString()}`, rEdge - 12, cellMidY, fontBold, 10, rgb(0, 0, 0))
+    drawRight(`${cur}${Number(summaryItem.price || 0).toLocaleString()}`, col4X - 14, cellMidY, font, 10, rgb(0, 0, 0))
+    drawRight(`${cur}${Number(summaryItem.total || 0).toLocaleString()}`, rEdge - 14, cellMidY, fontBold, 10, rgb(0, 0, 0))
 
-    // Bottom line of data row
-    drawLine(M, y - rowH, rEdge, y - rowH, rgb(0.92, 0.94, 0.96))
-    y -= rowH + 6
+    drawLine(M, y - rowH, rEdge, y - rowH, rgb(0.92, 0.92, 0.9))
+    y -= rowH + 8
 
     // ── Totals (right-aligned) ──
-    drawLine(rEdge - 200, y, rEdge, y, rgb(0.92, 0.94, 0.96))
+    const totX = rEdge - 190
+    drawLine(totX, y, rEdge, y, rgb(0.92, 0.92, 0.9))
     y -= 18
 
-    drawText('Subtotal', rEdge - 200, y, font, 11, rgb(0.45, 0.45, 0.5))
+    drawText('Subtotal', totX, y, font, 11, rgb(0.45, 0.45, 0.5))
     drawRight(`${cur}${Number(inv.total_amount || 0).toLocaleString()}`, rEdge, y, font, 11, rgb(0.45, 0.45, 0.5))
     y -= 18
 
     if (taxRate > 0) {
-      drawText(`Tax (${taxRate}%)`, rEdge - 200, y, font, 11, rgb(0.45, 0.45, 0.5))
+      drawText(`Tax (${taxRate}%)`, totX, y, font, 11, rgb(0.45, 0.45, 0.5))
       drawRight(`${cur}${taxAmount.toLocaleString()}`, rEdge, y, font, 11, rgb(0.45, 0.45, 0.5))
       y -= 18
     }
 
-    drawLine(rEdge - 200, y, rEdge, y, accent, 2)
+    drawLine(totX, y, rEdge, y, accent, 2)
     y -= 22
 
-    drawText('Total Due', rEdge - 200, y, fontBold, 16, accent)
+    drawText('Total Due', totX, y, fontBold, 16, accent)
     drawRight(`${cur}${totalWithTax.toLocaleString()}`, rEdge, y, fontBold, 16, accent)
 
     // ── Footer ──
     const footerY = 36
-    drawLine(M, footerY + 16, rEdge, footerY + 16, rgb(0.92, 0.94, 0.96))
+    drawLine(M, footerY + 16, rEdge, footerY + 16, rgb(0.92, 0.92, 0.9))
     const footerText = `${tpl.footerText} | ${tpl.companyName}${tpl.website ? ' | ' + tpl.website : ''}`
     const footerW = textW(footerText, font, 9)
     drawText(footerText, (width - footerW) / 2, footerY, font, 9, rgb(0.55, 0.55, 0.6))
