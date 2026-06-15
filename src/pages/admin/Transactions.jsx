@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Filter, X, Download, Eye, CheckCircle, Ban, ChevronDown, ChevronUp, Clock, Image as ImageIcon } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { getUser } from '../../utils/auth'
+import { updateTransactionStatus } from '../../services/dataService'
 import { useCurrencyFormatter } from '../../utils/currencyFormatter'
 import { useRealtimeRefresh } from '../../hooks/useSupabaseRealtime'
 
@@ -58,11 +59,17 @@ export function TransactionsPage() {
 
   useRealtimeRefresh('transactions', fetchData)
 
-  const updateStatus = async (id, newStatus) => {
+  const updateStatus = async (id, newStatus, transactionId) => {
     if (newStatus === 'cancelled' && !window.confirm('Cancel this transaction? This cannot be undone.')) return
     setUpdating(id)
     try {
-      await supabase.from('transactions').update({ status: newStatus }).eq('id', id)
+      // Route through the service so paid/cancelled fires the invoice automation
+      // (e.g. the "ticket confirmed" email) instead of a silent raw DB update.
+      if (transactionId) {
+        await updateTransactionStatus(transactionId, newStatus)
+      } else {
+        await supabase.from('transactions').update({ status: newStatus }).eq('id', id)
+      }
       fetchData()
       setDetailOpen(prev => prev?.id === id ? { ...prev, status: newStatus } : prev)
     } catch (err) { alert('Failed: ' + err.message) }
@@ -163,7 +170,7 @@ export function TransactionsPage() {
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-center">{t.quantity}</td>
                 <td className="px-4 py-3 text-slate-500 dark:text-slate-400 hidden lg:table-cell text-right font-medium">{fc(t.total_amount)}</td>
                 <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
-                  <select value={t.status} onChange={ev => updateStatus(t.id, ev.target.value)} disabled={updating === t.id}
+                  <select value={t.status} onChange={ev => updateStatus(t.id, ev.target.value, t.transaction_id)} disabled={updating === t.id}
                     className={`text-xs font-medium rounded-full px-2.5 py-1 border-0 cursor-pointer ${
                       t.status === 'paid' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' :
                       t.status === 'cancelled' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
@@ -277,13 +284,13 @@ export function TransactionsPage() {
 
                 <div className="border-t border-slate-100 dark:border-slate-700 pt-4 flex gap-2">
                   {detailOpen.status !== 'paid' && (
-                    <button onClick={() => updateStatus(detailOpen.id, 'paid')} disabled={updating === detailOpen.id}
+                    <button onClick={() => updateStatus(detailOpen.id, 'paid', detailOpen.transaction_id)} disabled={updating === detailOpen.id}
                       className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50">
                       <CheckCircle size={16} /> Mark as Paid
                     </button>
                   )}
                   {detailOpen.status !== 'cancelled' && (
-                    <button onClick={() => updateStatus(detailOpen.id, 'cancelled')} disabled={updating === detailOpen.id}
+                    <button onClick={() => updateStatus(detailOpen.id, 'cancelled', detailOpen.transaction_id)} disabled={updating === detailOpen.id}
                       className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50">
                       <Ban size={16} /> Cancel
                     </button>

@@ -861,7 +861,9 @@ export async function handleExternal(req: Request, method: string, path: string)
       }
 
       const filter = tenantWhere()
-      let q = supabase.from('transactions').select('*, tickets!inner(title)').eq('unique_code', uniqueCode.trim())
+      // Case-insensitive exact match — 6-char codes are typed by hand at check-in.
+      // (No %/_ in alphanumeric codes, so ilike is safe from wildcard injection.)
+      let q = supabase.from('transactions').select('*, tickets!inner(title)').ilike('unique_code', uniqueCode.trim())
       if (filter) q = q.eq(filter.column, filter.value)
       const { data: tx, error: findErr } = await q.single()
 
@@ -1045,14 +1047,24 @@ export async function handleExternal(req: Request, method: string, path: string)
 
       if (entity === 'transactions' && Number(insertData.quantity) > 1) {
         const qty = Number(insertData.quantity)
-        const baseCode = String(insertData.unique_code || '')
+        // Each ticket gets its own clean 6-char alphanumeric code (unique within the batch).
+        const CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        const usedCodes = new Set<string>()
+        const genCode = () => {
+          let c = ''
+          do {
+            c = Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('')
+          } while (usedCodes.has(c))
+          usedCodes.add(c)
+          return c
+        }
         const rows = []
         for (let i = 0; i < qty; i++) {
           rows.push({
             ...insertData,
             quantity: 1,
             total_amount: Number(insertData.price_per_unit) || Number(insertData.total_amount) / qty,
-            unique_code: baseCode ? `${baseCode}-${String(i + 1).padStart(3, '0')}` : `TKT-EXT-${Date.now()}-${String(i + 1).padStart(3, '0')}`,
+            unique_code: genCode(),
             barcode: insertData.barcode || String(Math.floor(Math.random() * 9999999999999)).padStart(13, '0'),
           })
         }
