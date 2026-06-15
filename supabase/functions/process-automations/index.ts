@@ -3,8 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { sendEmail } from '../_shared/brevo.ts'
 import { refreshPaymentOptions } from '../_shared/paymentOptions.ts'
 import {
-  generateInvoiceHtml,
-  generateInvoiceReminderHtml,
   generateInvoicePdf,
   replaceTemplateVars,
   getNextRunAt,
@@ -126,13 +124,8 @@ serve(async (req) => {
                 if (inv.branch) await refreshPaymentOptions(inv.branch)
                 const invoiceTemplate = await fetchInvoiceTemplate(supabase, inv.branch)
 
-                // Always generate invoice HTML
-                htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
-                // Prepend custom body as greeting above the invoice
-                if (hasCustomBody) {
-                  const greetingHtml = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;padding:0 32px 16px;">${auto.body}</div>`
-                  htmlBody = greetingHtml + htmlBody
-                }
+                // Use custom body or fallback
+                htmlBody = (hasCustomBody ? auto.body : `<p>${subject}</p>`)
                 subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
 
                 pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
@@ -275,13 +268,7 @@ serve(async (req) => {
 
             let subject = auto.subject || `Payment Reminder - ${inv.transaction_id}`
             const hasCustomBody = typeof auto.body === 'string' && auto.body.trim() !== ''
-            // Always generate invoice HTML
-            let htmlBody = generateInvoiceReminderHtml(inv, invoiceTemplate, 'Pending', inv.branch)
-            // Prepend custom body as greeting above the invoice
-            if (hasCustomBody) {
-              const greetingHtml = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;padding:0 32px 16px;">${auto.body}</div>`
-              htmlBody = greetingHtml + htmlBody
-            }
+            let htmlBody = (hasCustomBody ? auto.body : `<p>${subject}</p>`)
 
             const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
             const replaced = replaceTemplateVars(htmlBody, subject, inv, invoiceTemplate || {}, {
@@ -386,13 +373,7 @@ serve(async (req) => {
               ? `Payment Received - ${inv.transaction_id}`
               : `Invoice Created - ${inv.transaction_id}`)
             const hasCustomBody = typeof auto.body === 'string' && auto.body.trim() !== ''
-            // Always generate invoice HTML
-            let htmlBody = generateInvoiceHtml(inv, invoiceTemplate, eventLabel, inv.branch)
-            // Prepend custom body as greeting above the invoice
-            if (hasCustomBody) {
-              const greetingHtml = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;padding:0 32px 16px;">${auto.body}</div>`
-              htmlBody = greetingHtml + htmlBody
-            }
+            let htmlBody = (hasCustomBody ? auto.body : `<p>${subject}</p>`)
 
             const pdfBase64 = await generateInvoicePdf(inv, invoiceTemplate, inv.branch)
             const replaced = replaceTemplateVars(htmlBody, subject, inv, invoiceTemplate || {}, {

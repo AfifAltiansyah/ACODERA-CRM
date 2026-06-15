@@ -3,8 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { sendEmail } from '../_shared/brevo.ts'
 import { refreshPaymentOptions } from '../_shared/paymentOptions.ts'
 import {
-  generateInvoiceHtml,
-  generateInvoiceReminderHtml,
   generateInvoicePdf,
   replaceTemplateVars,
   fetchInvoiceTemplate,
@@ -230,19 +228,6 @@ serve(async (req) => {
               invoiceTemplate = await fetchInvoiceTemplate(supabase, txnData.branch)
             }
 
-            const statusLabel = event === 'invoice.paid' ? 'Paid' : event === 'invoice.overdue' ? 'Overdue' : event === 'invoice.cancelled' ? 'Cancelled' : 'Pending'
-
-            // Always generate invoice HTML for invoice events
-            if (event === 'invoice.overdue' || auto.type === 'Invoice Reminder') {
-              htmlBody = generateInvoiceReminderHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
-            } else {
-              htmlBody = generateInvoiceHtml(txnData, invoiceTemplate, statusLabel, txnData.branch)
-            }
-            // Prepend custom body as greeting above the invoice
-            if (hasCustomBody) {
-              const greetingHtml = `<div style="max-width:600px;margin:0 auto;font-family:Arial,Helvetica,sans-serif;padding:0 32px 16px;">${auto.body}</div>`
-              htmlBody = greetingHtml + htmlBody
-            }
             subject = auto.subject || (event === 'invoice.paid'
               ? `Payment Received - ${txnData.transaction_id}`
               : event === 'invoice.overdue'
